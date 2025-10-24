@@ -7,6 +7,7 @@ builder.Services.AddDbContext<DataContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
+builder.Services.AddScoped<Backend.Services.PatientService>();
 builder.Services.AddControllers();
 
 var app = builder.Build();
