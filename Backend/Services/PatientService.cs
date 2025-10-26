@@ -1,4 +1,5 @@
 ﻿using Backend.Data;
+using Backend.DTOs.request;
 using Backend.Entities;
 using Backend.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -24,35 +25,44 @@ public class PatientService
     /// <summary>
     /// Creates a new patient in the database.
     /// </summary>
-    /// <param name="newPatient">The patient entity to create.</param>
+    /// <param name="patientDto">The data to create a new patient.</param>
     /// <returns>A ServiceResult containing the created patient or validation errors.</returns>
-    public async Task<ServiceResult<Patient>> CreatePatient(Patient newPatient)
+    public async Task<ServiceResult<Patient>> CreatePatientAsync(PatientRequestDto patientDto)
     {
         var errors = new List<ValidationError>();
 
-        if (await _context.Patients.AnyAsync(p => p.Email == newPatient.Email))
-            errors.Add(new ValidationError { Field = "email", Message = "Já existe um paciente com esse email." });
+        if (await _context.Patients.AnyAsync(p => p.Email == patientDto.Email))
+            errors.Add(new ValidationError { Field = "email", Message = "Já existe um utente com esse email." });
 
-        if (await _context.Patients.AnyAsync(p => p.PhoneNumber == newPatient.PhoneNumber))
+        if (await _context.Patients.AnyAsync(p => p.PhoneNumber == patientDto.PhoneNumber))
             errors.Add(new ValidationError
-                { Field = "phoneNumber", Message = "Já existe um paciente com esse número de telemóvel." });
+                { Field = "phoneNumber", Message = "Já existe um utente com esse número de telemóvel." });
 
         if (errors.Count > 0)
             return ServiceResult<Patient>.ValidationError(errors);
 
+        var newPatient = new Patient
+        {
+            Name = patientDto.Name,
+            Email = patientDto.Email,
+            PhoneNumber = patientDto.PhoneNumber,
+            Address = patientDto.Address,
+            ZipCode = patientDto.ZipCode
+        };
+
         await _context.Patients.AddAsync(newPatient);
         await _context.SaveChangesAsync();
-        return ServiceResult<Patient>.Ok(newPatient, "Paciente criado");
+        return ServiceResult<Patient>.Ok(newPatient, "Utente criado");
     }
 
     /// <summary>
     /// Retrieves all patients from the database.
     /// </summary>
     /// <returns>A ServiceResult containing the list of patients.</returns>
-    public async Task<ServiceResult<List<Patient>>> GetAllPatients()
+    public async Task<ServiceResult<List<Patient>>> GetAllPatientsAsync()
     {
         var patients = await _context.Patients.ToListAsync();
-        return ServiceResult<List<Patient>>.Ok(patients, "Pacientes encontrados.");
+        return ServiceResult<List<Patient>>.Ok(patients, "Utentes encontrados.");
     }
 
     /// <summary>
@@ -60,57 +70,56 @@ public class PatientService
     /// </summary>
     /// <param name="id">The ID of the patient to retrieve.</param>
     /// <returns>A ServiceResult containing the patient or a not found result.</returns>
-    public async Task<ServiceResult<Patient>> GetPatientById(int id)
+    public async Task<ServiceResult<Patient>> GetPatientByIdAsync(int id)
     {
         var existingPatient = await _context.Patients.FindAsync(id);
         if (existingPatient == null)
         {
-            return ServiceResult<Patient>.NotFound("Não existe nenhum paciente com esse id.");
+            return ServiceResult<Patient>.NotFound("Não existe nenhum utente com esse id.");
         }
 
-        return ServiceResult<Patient>.Ok(existingPatient, "Paciente encontrado.");
+        return ServiceResult<Patient>.Ok(existingPatient, "Utente encontrado.");
     }
 
     /// <summary>
     /// Updates an existing patient with new data.
     /// </summary>
     /// <param name="id">The ID of the patient to update.</param>
-    /// <param name="updatedPatient">The updated patient data.</param>
+    /// <param name="patientDto">The updated patient data.</param>
     /// <returns>A ServiceResult indicating the success of the update operation.</returns>
-    public async Task<ServiceResult<Patient>> UpdatePatient(int id, Patient updatedPatient)
+    public async Task<ServiceResult<Patient>> UpdatePatientAsync(int id, PatientRequestDto patientDto)
     {
         var existing = await _context.Patients.FindAsync(id);
 
         if (existing == null)
         {
-            return ServiceResult<Patient>.NotFound("Não existe nenhum paciente com esse id.");
+            return ServiceResult<Patient>.NotFound("Não existe nenhum utente com esse id.");
         }
 
         var errors = new List<ValidationError>();
 
         if (await _context.Patients
-                .AnyAsync(p => p.Email == updatedPatient.Email && p.Id != id))
-            errors.Add(new ValidationError { Field = "email", Message = "Já existe um paciente com esse email." });
+                .AnyAsync(p => p.Email == patientDto.Email && p.Id != id))
+            errors.Add(new ValidationError { Field = "email", Message = "Já existe um utente com esse email." });
 
         if (await _context.Patients
-                .AnyAsync(p => p.PhoneNumber == updatedPatient.PhoneNumber && p.Id != id))
+                .AnyAsync(p => p.PhoneNumber == patientDto.PhoneNumber && p.Id != id))
             errors.Add(new ValidationError
-                { Field = "phoneNumber", Message = "O número de telefone já está em uso por outro paciente." });
+                { Field = "phoneNumber", Message = "O número de telefone já está em uso por outro utente." });
 
         if (errors.Count > 0)
         {
             return ServiceResult<Patient>.ValidationError(errors);
         }
 
-
-        existing.Name = updatedPatient.Name;
-        existing.Email = updatedPatient.Email;
-        existing.PhoneNumber = updatedPatient.PhoneNumber;
-        existing.Address = updatedPatient.Address;
-        existing.ZipCode = updatedPatient.ZipCode;
+        existing.Name = patientDto.Name;
+        existing.Email = patientDto.Email;
+        existing.PhoneNumber = patientDto.PhoneNumber;
+        existing.Address = patientDto.Address;
+        existing.ZipCode = patientDto.ZipCode;
 
         await _context.SaveChangesAsync();
-        return ServiceResult<Patient>.Ok(null, "Dados do paciente atualizados.");
+        return ServiceResult<Patient>.Ok(null, "Dados do utente atualizados.");
     }
 
     /// <summary>
@@ -118,16 +127,16 @@ public class PatientService
     /// </summary>
     /// <param name="id">The ID of the patient to delete.</param>
     /// <returns>A ServiceResult indicating the success of the delete operation.</returns>
-    public async Task<ServiceResult<Patient>> DeletePatient(int id)
+    public async Task<ServiceResult<Patient>> DeletePatientAsync(int id)
     {
         var patient = await _context.Patients.FindAsync(id);
         if (patient == null)
         {
-            return ServiceResult<Patient>.NotFound("Não existe nenhum paciente com esse id.");
+            return ServiceResult<Patient>.NotFound("Não existe nenhum utente com esse id.");
         }
 
         _context.Patients.Remove(patient);
         await _context.SaveChangesAsync();
-        return ServiceResult<Patient>.Ok(null, "Paciente removido.");
+        return ServiceResult<Patient>.Ok(null, "Utente removido.");
     }
 }

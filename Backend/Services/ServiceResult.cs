@@ -41,7 +41,7 @@ public class ServiceResult<T>
     /// <param name="message">The message describing the result.</param>
     /// <param name="data">The data payload.</param>
     /// <param name="errors">The collection of validation errors.</param>
-    private ServiceResult(ServiceResultType resultType, string message = "", T? data = default,
+    public ServiceResult(ServiceResultType resultType, string message = "", T? data = default,
         IEnumerable<ValidationError>? errors = null)
     {
         ResultType = resultType;

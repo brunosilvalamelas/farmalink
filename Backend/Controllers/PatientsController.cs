@@ -1,4 +1,6 @@
-﻿using Backend.Entities;
+﻿using Backend.DTOs.request;
+using Backend.DTOs.response;
+using Backend.Helpers;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,22 +27,32 @@ public class PatientsController : BaseApiController
     /// <summary>
     /// Creates a new patient.
     /// </summary>
-    /// <param name="newPatient">The patient data to create.</param>
+    /// <param name="patientDto">The patient data to create.</param>
     /// <returns>An IActionResult containing the created patient or error information.</returns>
     [HttpPost]
-    public async Task<IActionResult> CreatePatient([FromBody] Patient newPatient)
+    public async Task<IActionResult> CreatePatient([FromBody] PatientRequestDto patientDto)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
-        var result = await _patientService.CreatePatient(newPatient);
+        var result = await _patientService.CreatePatientAsync(patientDto);
+        var dtoResult = ServiceResultMapper.Map(result, p => new PatientResponseDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Email = p.Email,
+            PhoneNumber = p.PhoneNumber,
+            Address = p.Address,
+            ZipCode = p.ZipCode
+        });
 
-        if (result.Success && result.Data != null)
-            return CreatedFromServiceResult(result, nameof(GetPatientById), new { id = result.Data.Id });
+        if (dtoResult.Success && dtoResult.Data != null)
+            return CreatedFromServiceResult(dtoResult, nameof(GetPatientById), new { id = dtoResult.Data.Id });
 
-        return FromServiceResult(result);
+
+        return FromServiceResult(dtoResult);
     }
 
     /// <summary>
@@ -50,8 +62,21 @@ public class PatientsController : BaseApiController
     [HttpGet]
     public async Task<IActionResult> GetAllPatients()
     {
-        var result = await _patientService.GetAllPatients();
-        return FromServiceResult(result);
+        var result = await _patientService.GetAllPatientsAsync();
+
+        var dtoResult = ServiceResultMapper.Map(result, list =>
+            list.Select(p => new PatientResponseDto
+            {
+                Medications = p.Medications,
+                Id = p.Id,
+                Name = p.Name,
+                Email = p.Email,
+                PhoneNumber = p.PhoneNumber,
+                Address = p.Address,
+                ZipCode = p.ZipCode,
+            }).ToList()
+        );
+        return FromServiceResult(dtoResult);
     }
 
     /// <summary>
@@ -62,25 +87,38 @@ public class PatientsController : BaseApiController
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPatientById(int id)
     {
-        var result = await _patientService.GetPatientById(id);
-        return FromServiceResult(result);
+        var result = await _patientService.GetPatientByIdAsync(id);
+        var dtoResult = ServiceResultMapper.Map(result,
+            p => new PatientResponseDto
+            {
+                Medications = p.Medications,
+                Id = p.Id,
+                Name = p.Name,
+                Email = p.Email,
+                PhoneNumber = p.PhoneNumber,
+                Address = p.Address,
+                ZipCode = p.ZipCode,
+            }
+        );
+        return FromServiceResult(dtoResult);
     }
 
     /// <summary>
     /// Updates an existing patient by ID.
     /// </summary>
     /// <param name="id">The ID of the patient to update.</param>
-    /// <param name="updatedPatient">The updated patient data.</param>
+    /// <param name="patientDto">The updated patient data.</param>
     /// <returns>An IActionResult containing the result of the update operation.</returns>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdatePatientById(int id, [FromBody] Patient updatedPatient)
+    public async Task<IActionResult> UpdatePatientById(int id, [FromBody] PatientRequestDto patientDto)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
-        var result = await _patientService.UpdatePatient(id, updatedPatient);
+        var result = await _patientService.UpdatePatientAsync(id, patientDto);
+
         return FromServiceResult(result);
     }
 
@@ -92,7 +130,7 @@ public class PatientsController : BaseApiController
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePatientById(int id)
     {
-        var result = await _patientService.DeletePatient(id);
+        var result = await _patientService.DeletePatientAsync(id);
         return FromServiceResult(result);
     }
 }
