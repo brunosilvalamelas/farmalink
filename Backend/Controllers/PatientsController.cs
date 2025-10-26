@@ -1,6 +1,6 @@
 ﻿using Backend.DTOs.request;
 using Backend.DTOs.response;
-using Backend.Helpers;
+using Backend.Exceptions;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,29 +30,42 @@ public class PatientsController : BaseApiController
     /// <param name="patientDto">The patient data to create.</param>
     /// <returns>An IActionResult containing the created patient or error information.</returns>
     [HttpPost]
-    public async Task<IActionResult> CreatePatient([FromBody] PatientRequestDto patientDto)
+    public async Task<ActionResult<ApiResponse<PatientResponseDto>>> CreatePatient(
+        [FromBody] PatientRequestDto patientDto)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            var errors = GetModelStateErrors();
+            return BadRequest(new ApiResponse<PatientResponseDto>
+            {
+                Success = false,
+                Message = "Erros de validação",
+                Errors = errors
+            });
         }
 
-        var result = await _patientService.CreatePatientAsync(patientDto);
-        var dtoResult = ServiceResultMapper.Map(result, p => new PatientResponseDto
+        try
         {
-            Id = p.Id,
-            Name = p.Name,
-            Email = p.Email,
-            PhoneNumber = p.PhoneNumber,
-            Address = p.Address,
-            ZipCode = p.ZipCode
-        });
+            var createdPatient = await _patientService.CreatePatientAsync(patientDto);
+            var patientResponse = new PatientResponseDto
+            {
+                Id = createdPatient.Id,
+                Name = createdPatient.Name,
+                Email = createdPatient.Email,
+                PhoneNumber = createdPatient.PhoneNumber,
+                Address = createdPatient.Address,
+                ZipCode = createdPatient.ZipCode
+            };
 
-        if (dtoResult.Success && dtoResult.Data != null)
-            return CreatedFromServiceResult(dtoResult, nameof(GetPatientById), new { id = dtoResult.Data.Id });
-
-
-        return FromServiceResult(dtoResult);
+            return CreatedAtAction(nameof(GetPatientById), new { id = patientResponse.Id },
+                new ApiResponse<PatientResponseDto>
+                    { Success = true, Data = patientResponse, Message = "Utente criado" });
+        }
+        catch (ValidationException e)
+        {
+            return Conflict(new ApiResponse<PatientResponseDto>
+                { Success = false, Message = "Erros de validação", Errors = e.Errors });
+        }
     }
 
     /// <summary>
@@ -60,23 +73,23 @@ public class PatientsController : BaseApiController
     /// </summary>
     /// <returns>An IActionResult containing the list of patients or error information.</returns>
     [HttpGet]
-    public async Task<IActionResult> GetAllPatients()
+    public async Task<ActionResult<ApiResponse<List<PatientResponseDto>>>> GetAllPatients()
     {
-        var result = await _patientService.GetAllPatientsAsync();
+        var patients = await _patientService.GetAllPatientsAsync();
 
-        var dtoResult = ServiceResultMapper.Map(result, list =>
-            list.Select(p => new PatientResponseDto
-            {
-                Medications = p.Medications,
-                Id = p.Id,
-                Name = p.Name,
-                Email = p.Email,
-                PhoneNumber = p.PhoneNumber,
-                Address = p.Address,
-                ZipCode = p.ZipCode,
-            }).ToList()
-        );
-        return FromServiceResult(dtoResult);
+        var patientsResponse = patients.Select(patient => new PatientResponseDto
+        {
+            Medications = patient.Medications,
+            Id = patient.Id,
+            Name = patient.Name,
+            Email = patient.Email,
+            PhoneNumber = patient.PhoneNumber,
+            Address = patient.Address,
+            ZipCode = patient.ZipCode,
+        }).ToList();
+
+        return Ok(new ApiResponse<List<PatientResponseDto>>
+            { Message = "Utentes encontrados.", Data = patientsResponse });
     }
 
     /// <summary>
@@ -85,22 +98,29 @@ public class PatientsController : BaseApiController
     /// <param name="id">The ID of the patient to retrieve.</param>
     /// <returns>An IActionResult containing the patient data or error information.</returns>
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetPatientById(int id)
+    public async Task<ActionResult<ApiResponse<PatientResponseDto>>> GetPatientById(int id)
     {
-        var result = await _patientService.GetPatientByIdAsync(id);
-        var dtoResult = ServiceResultMapper.Map(result,
-            p => new PatientResponseDto
+        var patient = await _patientService.GetPatientByIdAsync(id);
+
+        if (patient == null)
+        {
+            return NotFound(new ApiResponse<PatientResponseDto>
+                { Success = false, Message = "Não existe nenhum utente com esse id" });
+        }
+
+
+        var patientResponse =
+            new PatientResponseDto
             {
-                Medications = p.Medications,
-                Id = p.Id,
-                Name = p.Name,
-                Email = p.Email,
-                PhoneNumber = p.PhoneNumber,
-                Address = p.Address,
-                ZipCode = p.ZipCode,
-            }
-        );
-        return FromServiceResult(dtoResult);
+                Medications = patient.Medications,
+                Id = patient.Id,
+                Name = patient.Name,
+                Email = patient.Email,
+                PhoneNumber = patient.PhoneNumber,
+                Address = patient.Address,
+                ZipCode = patient.ZipCode,
+            };
+        return Ok(new ApiResponse<PatientResponseDto> { Message = "Utente encontrado", Data = patientResponse });
     }
 
     /// <summary>
@@ -110,16 +130,29 @@ public class PatientsController : BaseApiController
     /// <param name="patientDto">The updated patient data.</param>
     /// <returns>An IActionResult containing the result of the update operation.</returns>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdatePatientById(int id, [FromBody] PatientRequestDto patientDto)
+    public async Task<ActionResult<ApiResponse<bool>>> UpdatePatientById(int id,
+        [FromBody] PatientRequestDto patientDto)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            var errors = GetModelStateErrors();
+            return BadRequest(new ApiResponse<bool>
+            {
+                Success = false,
+                Message = "Erros de validação",
+                Errors = errors
+            });
         }
 
-        var result = await _patientService.UpdatePatientAsync(id, patientDto);
+        var updated = await _patientService.UpdatePatientAsync(id, patientDto);
 
-        return FromServiceResult(result);
+        if (!updated)
+        {
+            return NotFound(
+                new ApiResponse<bool> { Success = false, Message = "Não existe nenhum utente com esse id" });
+        }
+
+        return Ok(new ApiResponse<bool> { Message = "Os dados do utente foram atualizados" });
     }
 
     /// <summary>
@@ -128,9 +161,15 @@ public class PatientsController : BaseApiController
     /// <param name="id">The ID of the patient to delete.</param>
     /// <returns>An IActionResult containing the result of the delete operation.</returns>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeletePatientById(int id)
+    public async Task<ActionResult<ApiResponse<bool>>> DeletePatientById(int id)
     {
-        var result = await _patientService.DeletePatientAsync(id);
-        return FromServiceResult(result);
+        var deleted = await _patientService.DeletePatientAsync(id);
+        if (!deleted)
+        {
+            return NotFound(
+                new ApiResponse<bool> { Success = false, Message = "Não existe nenhum utente com esse id" });
+        }
+
+        return Ok(new ApiResponse<bool> { Message = "Utente removido" });
     }
 }
