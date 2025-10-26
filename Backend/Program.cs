@@ -19,6 +19,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseMiddleware<Backend.Middleware.ErrorHandlerMiddleware>();
+
 app.UseRouting();
 
 app.UseAuthorization();
