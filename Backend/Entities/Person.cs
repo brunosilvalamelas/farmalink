@@ -19,8 +19,8 @@ namespace Backend.Entities
         /// Full name of the person.
         /// Maximum length of 20 characters.
         /// </summary>
-        [Required]
-        [StringLength(20)]
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
+        [StringLength(20, ErrorMessage = "O campo {0} deve ter no máximo {1} caracteres.")]
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
@@ -28,25 +28,25 @@ namespace Backend.Entities
         /// Must be a valid email format.
         /// Maximum length of 50 characters.
         /// </summary>
-        [Required]
-        [EmailAddress]
-        [StringLength(50)]
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
+        [EmailAddress(ErrorMessage = "O campo {0} não é um endereço de e-mail válido.")]
+        [StringLength(50, ErrorMessage = "O campo {0} deve ter no máximo {1} caracteres.")]
         public string Email { get; set; } = string.Empty;
 
         /// <summary>
         /// Phone number of the person.
         /// Must follow the Portuguese phone number format (optional +351 prefix).
         /// </summary>
-        [Required]
-        [RegularExpression(@"^(?:\+351)? ?[29][0-9]{8}$")]
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
+        [RegularExpression(@"^(?:\+351)? ?[29][0-9]{8}$", ErrorMessage = "O campo {0} não é um número de telemóvel português válido.")]
         public string PhoneNumber { get; set; } = string.Empty;
 
         /// <summary>
         /// Street address of the person.
         /// Maximum length of 50 characters.
         /// </summary>
-        [Required]
-        [StringLength(50)]
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
+        [StringLength(50, ErrorMessage = "O campo {0} deve ter no máximo {1} caracteres.")]
         public string Address { get; set; } = string.Empty;
 
         /// <summary>
@@ -54,9 +54,9 @@ namespace Backend.Entities
         /// Must follow the Portuguese format (e.g., 1234-567).
         /// Maximum length of 20 characters.
         /// </summary>
-        [Required]
-        [StringLength(20)]
-        [RegularExpression(@"^\d{4}-\d{3}$")]
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
+        [StringLength(20, ErrorMessage = "O campo {0} deve no máximo {1} caracteres.")]
+        [RegularExpression(@"^\d{4}-\d{3}$", ErrorMessage = "O campo {0} não é um código postal português válido .")]
         public string ZipCode { get; set; } = string.Empty;
     }
 }

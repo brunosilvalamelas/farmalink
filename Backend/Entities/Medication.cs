@@ -26,27 +26,27 @@ namespace Backend.Entities
         /// Name of the medication.
         /// Maximum length 50 characters.
         /// </summary>
-        [Required]
-        [StringLength(50, MinimumLength = 1)]
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
+        [StringLength(50, MinimumLength = 1, ErrorMessage = "O campo {0} deve ter pelo menos {2} caracteres e no máximo {1} caracteres.")]
         public string Name { get; set; } = null!;
 
         /// <summary>
         /// Quantity available in stock for this patient.
         /// </summary>
-        [Required]
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
         [Column(TypeName = "decimal(5,2)")]
         public decimal QuantityOnHand { get; set; }
 
         /// <summary>
         /// Quantity per unit of the medication.
         /// </summary>
-        [Required]
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
         public int QuantityPerUnit { get; set; }
 
         /// <summary>
         /// Threshold for low stock alert.
         /// </summary>
-        [Required]
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
         [Column(TypeName = "decimal(5,2)")]
         public decimal LowStockThreshold { get; set; }
 

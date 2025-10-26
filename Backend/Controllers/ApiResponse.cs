@@ -21,7 +21,7 @@ public class ApiResponse<T>
     /// <summary>
     /// Gets or sets the data payload of the response.
     /// </summary>
-    public T? Data { get; set; } = default;
+    public T? Data { get; set; }
 
     /// <summary>
     /// Gets or sets the collection of validation errors, if any.
