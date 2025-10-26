@@ -38,7 +38,7 @@ public class PatientsController : BaseApiController
         var result = await _patientService.CreatePatient(newPatient);
 
         if (result.Success && result.Data != null)
-            return CreatedAtAction(nameof(GetPatientById), new { id = result.Data.Id }, result.Data);
+            return CreatedFromServiceResult(result, nameof(GetPatientById), new { id = result.Data.Id });
 
         return FromServiceResult(result);
     }

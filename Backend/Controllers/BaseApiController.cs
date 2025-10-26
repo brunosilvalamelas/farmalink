@@ -38,4 +38,25 @@ public abstract class BaseApiController : ControllerBase
             })
         };
     }
+
+    /// <summary>
+    /// Converts a ServiceResult to a CreatedAtAction result with the appropriate ApiResponse.
+    /// </summary>
+    /// <typeparam name="T">The type of data contained in the service result.</typeparam>
+    /// <param name="result">The service result to convert to an action result.</param>
+    /// <param name="actionName">The name of the action to use for generating the URL.</param>
+    /// <param name="routeValues">The route values to use for generating the URL.</param>
+    /// <returns>An IActionResult representing the HTTP 201 Created response.</returns>
+    protected IActionResult CreatedFromServiceResult<T>(ServiceResult<T> result, string actionName, object routeValues)
+    {
+        var response = new ApiResponse<T>
+        {
+            Success = result.Success,
+            Message = result.Message,
+            Data = result.Data,
+            Errors = result.Errors
+        };
+
+        return CreatedAtAction(actionName, routeValues, response);
+    }
 }
