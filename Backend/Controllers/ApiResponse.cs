@@ -6,7 +6,7 @@ namespace Backend.Controllers;
 /// Represents a standardized response structure for API controller actions.
 /// </summary>
 /// <typeparam name="T">The type of the data payload in the response.</typeparam>
-public class ControllerResponse<T>
+public class ApiResponse<T>
 {
     /// <summary>
     /// Gets or sets a value indicating whether the operation was successful.

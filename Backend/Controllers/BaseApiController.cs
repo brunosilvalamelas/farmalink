@@ -17,9 +17,9 @@ public abstract class BaseApiController : ControllerBase
     /// <returns>An IActionResult representing the HTTP response.</returns>
     protected IActionResult FromServiceResult<T>(ServiceResult<T> result)
     {
-        var response = new ControllerResponse<T>
+        var response = new ApiResponse<T>
         {
-            Success = result.ResultType == ServiceResultType.Ok || result.ResultType == ServiceResultType.NoContent,
+            Success = result.Success,
             Message = result.Message,
             Data = result.Data,
             Errors = result.Errors
@@ -28,10 +28,9 @@ public abstract class BaseApiController : ControllerBase
         return result.ResultType switch
         {
             ServiceResultType.Ok => Ok(response),
-            ServiceResultType.NoContent => Ok(response),
             ServiceResultType.NotFound => NotFound(response),
-            ServiceResultType.AlreadyExists => BadRequest(response),
-            _ => StatusCode(500, new ControllerResponse<T>
+            ServiceResultType.ValidationError => BadRequest(response),
+            _ => StatusCode(500, new ApiResponse<T>
             {
                 Success = false,
                 Message = "Unexpected error",

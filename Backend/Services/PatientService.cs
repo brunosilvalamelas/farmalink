@@ -38,7 +38,7 @@ public class PatientService
                 { Field = "phoneNumber", Message = "Já existe um paciente com esse número de telemóvel." });
 
         if (errors.Count > 0)
-            return ServiceResult<Patient>.AlreadyExists(errors);
+            return ServiceResult<Patient>.ValidationError(errors);
 
         await _context.Patients.AddAsync(newPatient);
         await _context.SaveChangesAsync();
@@ -99,7 +99,7 @@ public class PatientService
 
         if (errors.Count > 0)
         {
-            return ServiceResult<Patient>.AlreadyExists(errors);
+            return ServiceResult<Patient>.ValidationError(errors);
         }
 
 
@@ -110,7 +110,7 @@ public class PatientService
         existing.ZipCode = updatedPatient.ZipCode;
 
         await _context.SaveChangesAsync();
-        return ServiceResult<Patient>.NoContent();
+        return ServiceResult<Patient>.Ok(null, "Dados do paciente atualizados.");
     }
 
     /// <summary>
@@ -128,6 +128,6 @@ public class PatientService
 
         _context.Patients.Remove(patient);
         await _context.SaveChangesAsync();
-        return ServiceResult<Patient>.NoContent();
+        return ServiceResult<Patient>.Ok(null, "Paciente removido.");
     }
 }

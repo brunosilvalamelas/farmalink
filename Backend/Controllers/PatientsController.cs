@@ -63,7 +63,6 @@ public class PatientsController : BaseApiController
     public async Task<IActionResult> GetPatientById(int id)
     {
         var result = await _patientService.GetPatientById(id);
-
         return FromServiceResult(result);
     }
 

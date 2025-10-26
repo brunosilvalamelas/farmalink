@@ -6,22 +6,17 @@
 public enum ServiceResultType
 {
     /// <summary>
-    /// Indicates a successful operation that returns data.
+    /// Indicates a successful operation.
     /// </summary>
     Ok,
 
     /// <summary>
-    /// Indicates a successful operation without returning data (e.g., updates or deletes).
-    /// </summary>
-    NoContent,
-
-    /// <summary>
-    /// Indicates that the requested resource was not found.
+    /// Indicates that the required item or data was not found and the operation could not continue without it.
     /// </summary>
     NotFound,
 
     /// <summary>
-    /// Indicates that the resource already exists, typically accompanied by validation errors.
+    /// Indicates validation errors in the provided data.
     /// </summary>
-    AlreadyExists,
+    ValidationError,
 }

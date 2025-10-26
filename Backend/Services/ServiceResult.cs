@@ -12,7 +12,7 @@ public class ServiceResult<T>
     /// Gets a value indicating whether the operation was successful (Ok or NoContent result type).
     /// </summary>
     public bool Success =>
-        ResultType == ServiceResultType.Ok || ResultType == ServiceResultType.NoContent;
+        ResultType == ServiceResultType.Ok;
 
     /// <summary>
     /// Gets the type of the service result.
@@ -73,17 +73,10 @@ public class ServiceResult<T>
     /// <param name="errors">The validation errors.</param>
     /// <param name="message">The message describing the conflict.</param>
     /// <returns>A ServiceResult instance representing a conflict due to existing resource.</returns>
-    public static ServiceResult<T> AlreadyExists(IEnumerable<ValidationError> errors,
-        string message = "Dados duplicados") =>
-        Create(ServiceResultType.AlreadyExists, message, default, errors);
+    public static ServiceResult<T> ValidationError(IEnumerable<ValidationError> errors,
+        string message = "Erros de validação") =>
+        Create(ServiceResultType.ValidationError, message, default, errors);
 
-    /// <summary>
-    /// Creates a no content service result indicating successful completion without data.
-    /// </summary>
-    /// <param name="message">The success message.</param>
-    /// <returns>A ServiceResult instance representing successful operation without data.</returns>
-    public static ServiceResult<T> NoContent(string message = "Sucesso") =>
-        Create(ServiceResultType.NoContent, message);
 
     /// <summary>
     /// Creates a new instance of ServiceResult with the specified parameters.
@@ -93,7 +86,7 @@ public class ServiceResult<T>
     /// <param name="data">The data payload.</param>
     /// <param name="errors">The validation errors.</param>
     /// <returns>A new ServiceResult instance.</returns>
-    private static ServiceResult<T> Create(ServiceResultType type, string message = "Recurso criado", T? data = default,
+    private static ServiceResult<T> Create(ServiceResultType type, string message, T? data = default,
         IEnumerable<ValidationError>? errors = null)
         => new(type, message, data, errors);
 }
