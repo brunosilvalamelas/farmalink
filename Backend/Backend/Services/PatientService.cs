@@ -25,16 +25,28 @@ public class PatientService
     /// <summary>
     /// Creates a new patient in the database.
     /// </summary>
-    /// <param name="patientDto">The data to create a new patient.</param>
-    /// <returns>A ServiceResult containing the created patient or validation errors.</returns>
-    public async Task<Patient> CreatePatientAsync(PatientRequestDto patientDto)
+    /// <param name="tutorId">The ID of the tutor for the new patient.</param>
+    /// <param name="patientDto">The patient data to create.</param>
+    /// <returns>The created patient or null if the tutor does not exist.</returns>
+    public async Task<Patient?> CreatePatientAsync(int tutorId, PatientRequestDto patientDto)
     {
+        bool tutorExists = await _context.Tutors.AnyAsync(t => t.Id == tutorId);
+
+        if (!tutorExists)
+        {
+            return null;
+        }
+
         var errors = new List<ValidationError>();
 
-        if (await _context.Patients.AnyAsync(p => p.Email == patientDto.Email))
+        var patients = await _context.Patients
+            .Select(p => new { p.Email, p.PhoneNumber })
+            .ToListAsync();
+
+        if (patients.Any(p => p.Email == patientDto.Email))
             errors.Add(new ValidationError { Field = "email", Message = "Já existe um utente com esse email." });
 
-        if (await _context.Patients.AnyAsync(p => p.PhoneNumber == patientDto.PhoneNumber))
+        if (patients.Any(p => p.PhoneNumber == patientDto.PhoneNumber))
             errors.Add(new ValidationError
                 { Field = "phoneNumber", Message = "Já existe um utente com esse número de telemóvel." });
 
@@ -47,7 +59,8 @@ public class PatientService
             Email = patientDto.Email,
             PhoneNumber = patientDto.PhoneNumber,
             Address = patientDto.Address,
-            ZipCode = patientDto.ZipCode
+            ZipCode = patientDto.ZipCode,
+            TutorId = tutorId
         };
 
         await _context.Patients.AddAsync(newPatient);
@@ -61,7 +74,7 @@ public class PatientService
     /// <returns>A ServiceResult containing the list of patients.</returns>
     public async Task<List<Patient>> GetAllPatientsAsync()
     {
-        var patients = await _context.Patients.ToListAsync();
+        var patients = await _context.Patients.Include(p => p.Tutor).ToListAsync();
         return patients;
     }
 
@@ -72,9 +85,27 @@ public class PatientService
     /// <returns>A ServiceResult containing the patient or a not found result.</returns>
     public async Task<Patient?> GetPatientByIdAsync(int id)
     {
-        var patient = await _context.Patients.FindAsync(id);
+        var patient = await _context.Patients.Include(p => p.Tutor).FirstOrDefaultAsync(p => p.Id == id);
 
         return patient;
+    }
+
+    /// <summary>
+    /// Retrieves patients by their tutor's ID.
+    /// </summary>
+    /// <param name="tutorId">The ID of the tutor to retrieve patients for.</param>
+    /// <returns>A list of patients or null if the tutor does not exist.</returns>
+    public async Task<List<Patient>?> GetPatientsByTutorIdAsync(int tutorId)
+    {
+        var tutorExists = await _context.Tutors.AnyAsync(t => t.Id == tutorId);
+        if (!tutorExists)
+        {
+            return null;
+        }
+
+        var patients = await _context.Patients.Where(p => p.TutorId == tutorId).ToListAsync();
+
+        return patients;
     }
 
     /// <summary>

@@ -2,6 +2,7 @@
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251027063905_AddTutorTableAndPatientRelation")]
+    partial class AddTutorTableAndPatientRelation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,6 +83,9 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("TutorId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ZipCode")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -87,7 +93,46 @@ namespace Backend.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TutorId");
+
                     b.ToTable("Patients");
+                });
+
+            modelBuilder.Entity("Backend.Entities.Tutor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ZipCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tutors");
                 });
 
             modelBuilder.Entity("Backend.Entities.Medication", b =>
@@ -103,7 +148,23 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Entities.Patient", b =>
                 {
+                    b.HasOne("Backend.Entities.Tutor", "Tutor")
+                        .WithMany("Patients")
+                        .HasForeignKey("TutorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tutor");
+                });
+
+            modelBuilder.Entity("Backend.Entities.Patient", b =>
+                {
                     b.Navigation("Medications");
+                });
+
+            modelBuilder.Entity("Backend.Entities.Tutor", b =>
+                {
+                    b.Navigation("Patients");
                 });
 #pragma warning restore 612, 618
         }

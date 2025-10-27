@@ -55,8 +55,8 @@ namespace Backend.Entities
         /// Maximum length of 20 characters.
         /// </summary>
         [Required(ErrorMessage = "O campo {0} é obrigatório.")]
-        [StringLength(20, ErrorMessage = "O campo {0} deve no máximo {1} caracteres.")]
-        [RegularExpression(@"^\d{4}-\d{3}$", ErrorMessage = "O campo {0} não é um código postal português válido .")]
+        [StringLength(20, ErrorMessage = "O campo {0} deve ter no máximo {1} caracteres.")]
+        [RegularExpression(@"^\d{4}-\d{3}$", ErrorMessage = "O campo {0} não é um código postal português válido.")]
         public string ZipCode { get; set; } = string.Empty;
     }
 }
