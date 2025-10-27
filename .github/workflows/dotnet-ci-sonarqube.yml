@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1. Checkout code
+      # 2. Checkout code
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -57,10 +57,17 @@ jobs:
             /o:"brunosilvalamelas" `
             /d:sonar.login="${{ secrets.SONAR_TOKEN }}" `
             /d:sonar.cs.opencover.reportsPaths="BackendTests/coverage/coverage.xml"
+        # 8. Build the solution
+      - name: Show current directory and files
+        run: |
+          echo "Current directory:"
+          pwd
+          echo ""
+          echo "List of files:"
+          dir
 
-      # 8. Build the solution
       - name: Build
-        run: dotnet build --no-restore
+        run: dotnet build "Backend/Backend.sln" --no-restore
 
       # 9. Run tests with coverage
       - name: Run tests
@@ -72,7 +79,7 @@ jobs:
 
       # 11. Upload coverage report as artifact (optional)
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: BackendTests/coverage-report
