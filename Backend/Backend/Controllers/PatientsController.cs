@@ -13,13 +13,13 @@ namespace Backend.Controllers;
 [Route("api/[controller]")]
 public class PatientsController : BaseApiController
 {
-    private readonly PatientService _patientService;
+    private readonly IPatientService _patientService;
 
     /// <summary>
     /// Initializes a new instance of the PatientsController.
     /// </summary>
     /// <param name="patientService">The patient service instance.</param>
-    public PatientsController(PatientService patientService)
+    public PatientsController(IPatientService patientService)
     {
         _patientService = patientService;
     }

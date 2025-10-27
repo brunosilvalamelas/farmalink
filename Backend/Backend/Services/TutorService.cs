@@ -9,7 +9,7 @@ namespace Backend.Services;
 /// <summary>
 /// Service class for handling tutor-related business logic operations.
 /// </summary>
-public class TutorService
+public class TutorService : ITutorService
 {
     private readonly DataContext _context;
 
@@ -136,4 +136,3 @@ public class TutorService
         return true;
     }
 }
-

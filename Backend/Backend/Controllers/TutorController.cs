@@ -13,15 +13,15 @@ namespace Backend.Controllers;
 [Route("api/[controller]")]
 public class TutorsController : BaseApiController
 {
-    private readonly TutorService _tutorService;
-    private readonly PatientService _patientService;
+    private readonly ITutorService _tutorService;
+    private readonly IPatientService _patientService;
 
     /// <summary>
     /// Initializes a new instance of the TutorsController.
     /// </summary>
     /// <param name="tutorService">The tutor service instance.</param>
     /// <param name="patientService">The patient service instance.</param>
-    public TutorsController(TutorService tutorService, PatientService patientService)
+    public TutorsController(ITutorService tutorService, IPatientService patientService)
     {
         _tutorService = tutorService;
         _patientService = patientService;

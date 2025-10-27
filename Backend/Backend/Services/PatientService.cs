@@ -9,7 +9,7 @@ namespace Backend.Services;
 /// <summary>
 /// Service class for handling patient-related business logic operations.
 /// </summary>
-public class PatientService
+public class PatientService : IPatientService
 {
     private readonly DataContext _context;
 
