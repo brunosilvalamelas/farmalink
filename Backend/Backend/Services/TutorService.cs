@@ -1,7 +1,7 @@
 ﻿using Backend.Data;
 using Backend.DTOs.request;
 using Backend.Entities;
-using Backend.Exceptions;
+using Backend.Entities.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services;
@@ -12,51 +12,52 @@ namespace Backend.Services;
 public class TutorService : ITutorService
 {
     private readonly DataContext _context;
+    private readonly IUserService _userService;
 
     /// <summary>
     /// Initializes a new instance of the TutorService.
     /// </summary>
     /// <param name="dataContext">The data context instance for database interactions.</param>
-    public TutorService(DataContext dataContext)
+    public TutorService(DataContext dataContext, IUserService userService)
     {
         _context = dataContext;
+        _userService = userService;
     }
 
     /// <summary>
-    /// Creates a new tutor in the database.
+    /// Creates a new tutor, validates for duplicates, and generates a JWT token.
     /// </summary>
-    /// <param name="tutorDto">The data to create a new tutor.</param>
-    /// <returns>A ServiceResult containing the created tutor or validation errors.</returns>
-    public async Task<Tutor> CreateTutorAsync(TutorRequestDto tutorDto)
+    /// <param name="createTutorDto">The tutor creation data.</param>
+    /// <returns>A tuple containing the created Tutor entity and the JWT token.</returns>
+    public async Task<(Tutor tutor, string token)> CreateTutorAsync(CreateTutorRequestDto createTutorDto)
     {
-        var errors = new List<ValidationError>();
-
-        var tutors = await _context.Tutors
-            .Select(p => new { p.Email, p.PhoneNumber })
-            .ToListAsync();
-
-        if (tutors.Any(p => p.Email == tutorDto.Email))
-            errors.Add(new ValidationError { Field = "email", Message = "Já existe um tutor com esse email." });
-
-        if (tutors.Any(p => p.PhoneNumber == tutorDto.PhoneNumber))
-            errors.Add(new ValidationError
-                { Field = "phoneNumber", Message = "Já existe um tutor com esse número de telemóvel." });
-
-        if (errors.Count > 0)
-            throw new ValidationException(errors);
-
-        var newTutor = new Tutor
+        var fields = new Dictionary<string, string>
         {
-            Name = tutorDto.Name,
-            Email = tutorDto.Email,
-            PhoneNumber = tutorDto.PhoneNumber,
-            Address = tutorDto.Address,
-            ZipCode = tutorDto.ZipCode
+            { "Email", createTutorDto.Email },
+            { "PhoneNumber", createTutorDto.PhoneNumber }
         };
 
-        await _context.Tutors.AddAsync(newTutor);
+        await _userService.ValidateDuplicatesAsync<User>(fields);
+
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(createTutorDto.Password);
+
+        Tutor newTutor = new Tutor
+        {
+            Name = createTutorDto.Name,
+            Email = createTutorDto.Email,
+            PasswordHash = hashedPassword,
+            PhoneNumber = createTutorDto.PhoneNumber,
+            ZipCode = createTutorDto.ZipCode,
+            Address = createTutorDto.Address,
+            Role = UserRole.Tutor
+        };
+
+        _context.Tutors.Add(newTutor);
         await _context.SaveChangesAsync();
-        return newTutor;
+
+        var token = _userService.GenerateToken(newTutor.Id, newTutor.Role);
+
+        return (newTutor, token);
     }
 
     /// <summary>
@@ -85,9 +86,9 @@ public class TutorService : ITutorService
     /// Updates an existing tutor with new data.
     /// </summary>
     /// <param name="id">The ID of the tutor to update.</param>
-    /// <param name="tutorDto">The updated tutor data.</param>
+    /// <param name="updateTutorDto">The updated tutor data.</param>
     /// <returns>A ServiceResult indicating the success of the update operation.</returns>
-    public async Task<bool> UpdateTutorAsync(int id, TutorRequestDto tutorDto)
+    public async Task<bool> UpdateTutorAsync(int id, UpdateTutorRequestDto updateTutorDto)
     {
         var tutor = await _context.Tutors.FindAsync(id);
 
@@ -96,23 +97,9 @@ public class TutorService : ITutorService
             return false;
         }
 
-        var errors = new List<ValidationError>();
-
-        if (await _context.Tutors
-                .AnyAsync(p => p.Email == tutorDto.Email && p.Id != id))
-            errors.Add(new ValidationError { Field = "email", Message = "Já existe um tutor com esse email." });
-
-        if (await _context.Tutors
-                .AnyAsync(p => p.PhoneNumber == tutorDto.PhoneNumber && p.Id != id))
-            errors.Add(new ValidationError
-                { Field = "phoneNumber", Message = "O número de telefone já está em uso por outro tutor." });
-
-        if (errors.Count > 0)
-        {
-            throw new ValidationException(errors);
-        }
-
-        _context.Entry(tutor).CurrentValues.SetValues(tutorDto);
+        tutor.Name = updateTutorDto.Name;
+        tutor.Address = updateTutorDto.Address;
+        tutor.ZipCode = updateTutorDto.ZipCode;
 
         await _context.SaveChangesAsync();
         return true;

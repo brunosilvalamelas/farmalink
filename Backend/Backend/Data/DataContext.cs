@@ -31,4 +31,23 @@ public class DataContext : DbContext
     /// DbSet for managing Tutor entities in the database.
     /// </summary>
     public DbSet<Tutor> Tutors { get; set; }
+
+    /// <summary>
+    /// DbSet for managing User entities in the database.
+    /// </summary>
+    public DbSet<User> Users { get; set; }
+
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<User>().ToTable("Users");
+        modelBuilder.Entity<Employee>().ToTable("Employees");
+        modelBuilder.Entity<Patient>().ToTable("Patients");
+        modelBuilder.Entity<Tutor>().ToTable("Tutors");
+        modelBuilder.Entity<User>()
+            .Property(u => u.Role)
+            .HasConversion<string>();
+    }
 }

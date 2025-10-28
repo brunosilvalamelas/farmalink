@@ -1,4 +1,5 @@
-﻿using Backend.DTOs.request;
+﻿using System.Security.Claims;
+using Backend.DTOs.request;
 using Backend.DTOs.response;
 using Backend.Exceptions;
 using Backend.Services;
@@ -15,6 +16,7 @@ public class PatientsController : BaseApiController
 {
     private readonly IPatientService _patientService;
 
+
     /// <summary>
     /// Initializes a new instance of the PatientsController.
     /// </summary>
@@ -25,14 +27,13 @@ public class PatientsController : BaseApiController
     }
 
     /// <summary>
-    /// Creates a new patient.
+    /// Creates a new patient associated with the currently authenticated tutor.
     /// </summary>
-    /// <param name="tutorId">The ID of the tutor for the patient.</param>
-    /// <param name="patientDto">The patient data to create.</param>
+    /// <param name="createPatientDto">The patient creation data.</param>
     /// <returns>An IActionResult containing the created patient or error information.</returns>
     [HttpPost]
-    public async Task<ActionResult<ApiResponse<PatientResponseDto>>> CreatePatient(int tutorId,
-        [FromBody] PatientRequestDto patientDto)
+    public async Task<ActionResult<ApiResponse<PatientResponseDto>>> CreatePatient(
+        [FromBody] CreatePatientRequestDto createPatientDto)
     {
         if (!ModelState.IsValid)
         {
@@ -45,15 +46,17 @@ public class PatientsController : BaseApiController
             });
         }
 
+        var tutorIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(tutorIdString, out int loggedInTutorId))
+        {
+            return Unauthorized(new ApiResponse<PatientResponseDto>
+                { Success = false, Message = "Nenhum tutor autenticado" });
+        }
+
         try
         {
-            var createdPatient = await _patientService.CreatePatientAsync(tutorId, patientDto);
-
-            if (createdPatient == null)
-            {
-                return NotFound(new ApiResponse<PatientResponseDto>
-                    { Success = false, Message = "Não existe nenhum tutor com esse id" });
-            }
+            var createdPatient = await _patientService.CreatePatientAsync(loggedInTutorId, createPatientDto);
 
             var patientResponse = new PatientResponseDto
             {
@@ -62,12 +65,13 @@ public class PatientsController : BaseApiController
                 Email = createdPatient.Email,
                 PhoneNumber = createdPatient.PhoneNumber,
                 Address = createdPatient.Address,
-                ZipCode = createdPatient.ZipCode
+                ZipCode = createdPatient.ZipCode,
+                TutorId = createdPatient.TutorId
             };
 
             return CreatedAtAction(nameof(GetPatientById), new { id = patientResponse.Id },
                 new ApiResponse<PatientResponseDto>
-                    { Success = true, Data = patientResponse, Message = "Utente criado" });
+                    { Success = true, Data = patientResponse, Message = "Utente registado" });
         }
         catch (ValidationException e)
         {
@@ -85,6 +89,10 @@ public class PatientsController : BaseApiController
     {
         var patients = await _patientService.GetAllPatientsAsync();
 
+        var userId = User.FindFirstValue(ClaimTypes.Role);
+
+        Console.WriteLine("USER ID" + userId);
+
         var patientsResponse = patients.Select(patient => new PatientResponseDto
         {
             Id = patient.Id,
@@ -100,36 +108,7 @@ public class PatientsController : BaseApiController
         return Ok(new ApiResponse<List<PatientResponseDto>>
             { Message = "Utentes encontrados.", Data = patientsResponse });
     }
-
-    /// <summary>
-    /// Retrieves patients by tutor ID.
-    /// </summary>
-    /// <returns>An IActionResult containing the list of patients or error information.</returns>
-    [HttpGet("by-tutor/{tutorId}")]
-    public async Task<ActionResult<ApiResponse<List<PatientOfTutorResponseDto>>>> GetPatientsByTutorId(int tutorId)
-    {
-        var patients = await _patientService.GetPatientsByTutorIdAsync(tutorId);
-
-        if (patients == null)
-        {
-            return NotFound(new ApiResponse<PatientOfTutorResponseDto>
-                { Success = false, Message = "Não existe nenhum tutor com esse id" });
-        }
-
-        var patientsResponse = patients.Select(patient => new PatientOfTutorResponseDto
-        {
-            Id = patient.Id,
-            Name = patient.Name,
-            Email = patient.Email,
-            PhoneNumber = patient.PhoneNumber,
-            Address = patient.Address,
-            ZipCode = patient.ZipCode,
-        }).ToList();
-
-        return Ok(new ApiResponse<List<PatientOfTutorResponseDto>>
-            { Message = "Utentes encontrados.", Data = patientsResponse });
-    }
-
+    
     /// <summary>
     /// Retrieves a patient by their ID.
     /// </summary>
@@ -162,15 +141,46 @@ public class PatientsController : BaseApiController
         return Ok(new ApiResponse<PatientResponseDto> { Message = "Utente encontrado", Data = patientResponse });
     }
 
+
+    /// <summary>
+    /// Retrieves patients by tutor ID.
+    /// </summary>
+    /// <returns>An IActionResult containing the list of patients or error information.</returns>
+    [HttpGet("by-tutor/{tutorId}")]
+    public async Task<ActionResult<ApiResponse<List<PatientOfTutorResponseDto>>>> GetPatientsByTutorId(int tutorId)
+    {
+        var patients = await _patientService.GetPatientsByTutorIdAsync(tutorId);
+
+        if (patients == null)
+        {
+            return NotFound(new ApiResponse<PatientOfTutorResponseDto>
+                { Success = false, Message = "Não existe nenhum tutor com esse id" });
+        }
+
+        var patientsResponse = patients.Select(patient => new PatientOfTutorResponseDto
+        {
+            Id = patient.Id,
+            Name = patient.Name,
+            Email = patient.Email,
+            PhoneNumber = patient.PhoneNumber,
+            Address = patient.Address,
+            ZipCode = patient.ZipCode,
+        }).ToList();
+
+        return Ok(new ApiResponse<List<PatientOfTutorResponseDto>>
+            { Message = "Utentes encontrados.", Data = patientsResponse });
+    }
+
+
     /// <summary>
     /// Updates an existing patient by ID.
     /// </summary>
     /// <param name="id">The ID of the patient to update.</param>
-    /// <param name="patientDto">The updated patient data.</param>
+    /// <param name="updatePatientDto">The updated patient data.</param>
     /// <returns>An IActionResult containing the result of the update operation.</returns>
     [HttpPut("{id}")]
     public async Task<ActionResult<ApiResponse<bool>>> UpdatePatientById(int id,
-        [FromBody] PatientRequestDto patientDto)
+        [FromBody] UpdatePatientRequestDto updatePatientDto)
     {
         if (!ModelState.IsValid)
         {
@@ -183,7 +193,7 @@ public class PatientsController : BaseApiController
             });
         }
 
-        var updated = await _patientService.UpdatePatientAsync(id, patientDto);
+        var updated = await _patientService.UpdatePatientAsync(id, updatePatientDto);
 
         if (!updated)
         {

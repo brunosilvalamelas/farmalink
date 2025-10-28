@@ -8,14 +8,8 @@ namespace Backend.Services;
 /// </summary>
 public interface IPatientService
 {
-    /// <summary>
-    /// Creates a new patient in the database.
-    /// </summary>
-    /// <param name="tutorId">The ID of the tutor for the new patient.</param>
-    /// <param name="patientDto">The patient data to create.</param>
-    /// <returns>The created patient or null if the tutor does not exist.</returns>
-    Task<Patient?> CreatePatientAsync(int tutorId, PatientRequestDto patientDto);
 
+    Task<Patient> CreatePatientAsync(int loggedInTutorId, CreatePatientRequestDto createPatientDto);
     /// <summary>
     /// Retrieves all patients from the database.
     /// </summary>
@@ -40,9 +34,9 @@ public interface IPatientService
     /// Updates an existing patient with new data.
     /// </summary>
     /// <param name="id">The ID of the patient to update.</param>
-    /// <param name="patientDto">The updated patient data.</param>
+    /// <param name="updatePatientDto">The updated patient data.</param>
     /// <returns>A ServiceResult indicating the success of the update operation.</returns>
-    Task<bool> UpdatePatientAsync(int id, PatientRequestDto patientDto);
+    Task<bool> UpdatePatientAsync(int id, UpdatePatientRequestDto updatePatientDto);
 
     /// <summary>
     /// Deletes a patient by their ID.

@@ -2,11 +2,13 @@ using Backend.Controllers;
 using Backend.Data;
 using Backend.DTOs.request;
 using Backend.DTOs.response;
-using Backend.Services;
 using Backend.Entities;
+using Backend.Entities.Enums;
+using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.Extensions.Configuration;
+using Moq;
 
 namespace BackendTests.Integration.Controllers;
 
@@ -14,7 +16,6 @@ public class TutorsControllerTests : IDisposable
 {
     private readonly DataContext _dataContext;
     private readonly TutorService _tutorService;
-    private readonly PatientService _patientService;
     private readonly TutorsController _controller;
 
     /// <summary>
@@ -24,10 +25,14 @@ public class TutorsControllerTests : IDisposable
     {
         // Initialize in-memory database
         var options = new DbContextOptionsBuilder<DataContext>()
-            .UseInMemoryDatabase(databaseName: "TestTutorDb")
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
         _dataContext = new DataContext(options);
+
+        var mockConfig = new Mock<IConfiguration>();
+        mockConfig.Setup(c => c["Jwt:Key"]).Returns("SuperSecretKeyForTestingPurposesNowLongEnoughToMeetThe256BitRequirementForHS256Algorithm");
+        var userService = new UserService(mockConfig.Object, _dataContext);
 
         // Seed data
         var tutor1 = new Tutor
@@ -36,8 +41,10 @@ public class TutorsControllerTests : IDisposable
             Name = "João Silva",
             Email = "joao@example.com",
             PhoneNumber = "912345678",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
             Address = "Rua do João",
-            ZipCode = "1234-567"
+            ZipCode = "1234-567",
+            Role = UserRole.Tutor
         };
 
         var tutor2 = new Tutor
@@ -46,16 +53,17 @@ public class TutorsControllerTests : IDisposable
             Name = "Pedro Costa",
             Email = "pedro@example.com",
             PhoneNumber = "912345679",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
             Address = "Rua do Pedro",
-            ZipCode = "1234-568"
+            ZipCode = "1234-568",
+            Role = UserRole.Tutor
         };
 
         _dataContext.Tutors.AddRange(tutor1, tutor2);
         _dataContext.SaveChanges();
 
-        _tutorService = new TutorService(_dataContext);
-        _patientService = new PatientService(_dataContext);
-        _controller = new TutorsController(_tutorService, _patientService);
+        _tutorService = new TutorService(_dataContext, userService);
+        _controller = new TutorsController(_tutorService);
     }
 
     /// <summary>
@@ -124,11 +132,12 @@ public class TutorsControllerTests : IDisposable
     [Fact]
     public async Task CreateTutor_ReturnsCreatedAtActionResult_WhenTutorAdded()
     {
-        var newTutor = new TutorRequestDto
+        var newTutor = new CreateTutorRequestDto
         {
             Name = "Ana Pereira",
             Email = "ana@example.com",
             PhoneNumber = "912345681",
+            Password = "password123",
             Address = "Rua da Ana",
             ZipCode = "1234-570"
         };
@@ -138,11 +147,10 @@ public class TutorsControllerTests : IDisposable
 
         // Assert
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<TutorResponseDto>>(createdAtActionResult.Value);
+        var response = Assert.IsType<ApiResponse<CreateTutorResponseDto>>(createdAtActionResult.Value);
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
         Assert.Equal(newTutor.Name, response.Data.Name);
-        Assert.Equal(newTutor.Email, response.Data.Email);
     }
 
     /// <summary>
@@ -151,11 +159,12 @@ public class TutorsControllerTests : IDisposable
     [Fact]
     public async Task CreateTutor_ReturnsBadRequest_WhenModelStateInvalid()
     {
-        var newTutor = new TutorRequestDto
+        var newTutor = new CreateTutorRequestDto
         {
             Name = "",
             Email = "ana@example.com",
             PhoneNumber = "912345681",
+            Password = "password123",
             Address = "Rua da Ana",
             ZipCode = "1234-570"
         };
@@ -167,7 +176,7 @@ public class TutorsControllerTests : IDisposable
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<TutorResponseDto>>(badRequestResult.Value);
+        var response = Assert.IsType<ApiResponse<CreateTutorResponseDto>>(badRequestResult.Value);
         Assert.False(response.Success);
         Assert.Equal("Erros de validação", response.Message);
     }
@@ -179,11 +188,9 @@ public class TutorsControllerTests : IDisposable
     public async Task UpdateTutorById_ReturnsOkResult_WhenUpdateSucceeds()
     {
         var tutorId = 1;
-        var updatedTutor = new TutorRequestDto
+        var updatedTutor = new UpdateTutorRequestDto
         {
             Name = "Updated João",
-            Email = "updated@example.com",
-            PhoneNumber = "965432109",
             Address = "Updated Address",
             ZipCode = "9876-543"
         };
@@ -205,11 +212,9 @@ public class TutorsControllerTests : IDisposable
     public async Task UpdateTutorById_ReturnsBadRequest_WhenModelStateInvalid()
     {
         var tutorId = 1;
-        var updatedTutor = new TutorRequestDto
+        var updatedTutor = new UpdateTutorRequestDto
         {
             Name = "",
-            Email = "updated@example.com",
-            PhoneNumber = "965432109",
             Address = "Updated Address",
             ZipCode = "9876-543"
         };
@@ -233,11 +238,9 @@ public class TutorsControllerTests : IDisposable
     public async Task UpdateTutorById_ReturnsNotFound_WhenTutorNotFound()
     {
         var tutorId = 999;
-        var updatedTutor = new TutorRequestDto
+        var updatedTutor = new UpdateTutorRequestDto
         {
             Name = "Updated João",
-            Email = "updated@example.com",
-            PhoneNumber = "965432109",
             Address = "Updated Address",
             ZipCode = "9876-543"
         };
@@ -288,85 +291,4 @@ public class TutorsControllerTests : IDisposable
         Assert.Equal("Não existe nenhum tutor com esse id", response.Message);
     }
 
-    /// <summary>
-    /// Test that verifies if the `RegisterPatient` method returns a CreatedAtActionResult when the patient is registered
-    /// </summary>
-    [Fact]
-    public async Task RegisterPatient_ReturnsCreatedAtActionResult_WhenPatientRegistered()
-    {
-        var tutorId = 1;
-        var newPatient = new PatientRequestDto
-        {
-            Name = "Ana Pereira",
-            Email = "ana@example.com",
-            PhoneNumber = "912345681",
-            Address = "Rua da Ana",
-            ZipCode = "1234-570"
-        };
-
-        // Act
-        var result = await _controller.RegisterPatient(tutorId, newPatient);
-
-        // Assert
-        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<PatientResponseDto>>(createdAtActionResult.Value);
-        Assert.True(response.Success);
-        Assert.NotNull(response.Data);
-        Assert.Equal(newPatient.Name, response.Data.Name);
-        Assert.Equal(newPatient.Email, response.Data.Email);
-    }
-
-    /// <summary>
-    /// Test that verifies if the `RegisterPatient` method returns a NotFound when the tutor does not exist
-    /// </summary>
-    [Fact]
-    public async Task RegisterPatient_ReturnsNotFound_WhenTutorNotExists()
-    {
-        var tutorId = 999;
-        var newPatient = new PatientRequestDto
-        {
-            Name = "Ana Pereira",
-            Email = "ana@example.com",
-            PhoneNumber = "912345681",
-            Address = "Rua da Ana",
-            ZipCode = "1234-570"
-        };
-
-        // Act
-        var result = await _controller.RegisterPatient(tutorId, newPatient);
-
-        // Assert
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<PatientResponseDto>>(notFoundResult.Value);
-        Assert.False(response.Success);
-        Assert.Equal("Não existe nenhum tutor com esse id", response.Message);
-    }
-
-    /// <summary>
-    /// Test that verifies if the `RegisterPatient` method returns a BadRequest when model state is invalid
-    /// </summary>
-    [Fact]
-    public async Task RegisterPatient_ReturnsBadRequest_WhenModelStateInvalid()
-    {
-        var tutorId = 1;
-        var newPatient = new PatientRequestDto
-        {
-            Name = "",
-            Email = "ana@example.com",
-            PhoneNumber = "912345681",
-            Address = "Rua da Ana",
-            ZipCode = "1234-570"
-        };
-
-        _controller.ModelState.AddModelError("Name", "Name is required");
-
-        // Act
-        var result = await _controller.RegisterPatient(tutorId, newPatient);
-
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<PatientResponseDto>>(badRequestResult.Value);
-        Assert.False(response.Success);
-        Assert.Equal("Erros de validação", response.Message);
-    }
 }

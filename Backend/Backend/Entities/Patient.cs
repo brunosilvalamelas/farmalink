@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Backend.Entities
 {
@@ -7,22 +8,25 @@ namespace Backend.Entities
     /// Inherits common personal information from <see cref="Person"/> 
     /// and includes a collection of medications prescribed to the patient.
     /// </summary>
-    public class Patient : Person
+    public class Patient : User
     {
+        [ForeignKey("Tutor")] public int TutorId { get; set; }
+
+        /// <summary>
+        /// Street address of the person.
+        /// Maximum length of 50 characters.
+        /// </summary>
+        [Required(ErrorMessage = "O campo {0} é obrigatório.")]
+        [StringLength(50, ErrorMessage = "O campo {0} deve ter no máximo {1} caracteres.")]
+        public string Address { get; set; } = string.Empty;
+
+        public Tutor Tutor { get; set; } = null!;
+
+
         /// <summary>
         /// Collection of medications associated with the patient.
         /// Represents the medications currently prescribed or managed for this patient.
         /// </summary>
         public ICollection<Medication> Medications { get; set; } = new List<Medication>();
-
-        [ForeignKey("Tutor")] public int TutorId { get; set; }
-
-        public Tutor Tutor { get; set; } = null!;
-
-        public override string ToString()
-        {
-            return
-                $"Patient(Id={Id}, Name={Name}, Email={Email}, Phone={PhoneNumber}, Medications={Medications.Count})";
-        }
     }
 }

@@ -13,7 +13,7 @@ public interface ITutorService
     /// </summary>
     /// <param name="tutorDto">The data to create a new tutor.</param>
     /// <returns>A ServiceResult containing the created tutor or validation errors.</returns>
-    Task<Tutor> CreateTutorAsync(TutorRequestDto tutorDto);
+    Task<(Tutor tutor, string token)> CreateTutorAsync(CreateTutorRequestDto createTutorDto);
 
     /// <summary>
     /// Retrieves all tutors from the database.
@@ -32,9 +32,9 @@ public interface ITutorService
     /// Updates an existing tutor with new data.
     /// </summary>
     /// <param name="id">The ID of the tutor to update.</param>
-    /// <param name="tutorDto">The updated tutor data.</param>
+    /// <param name="updateTutorDto">The updated tutor data.</param>
     /// <returns>A ServiceResult indicating the success of the update operation.</returns>
-    Task<bool> UpdateTutorAsync(int id, TutorRequestDto tutorDto);
+    Task<bool> UpdateTutorAsync(int id, UpdateTutorRequestDto updateTutorDto);
 
     /// <summary>
     /// Deletes a tutor by their ID.

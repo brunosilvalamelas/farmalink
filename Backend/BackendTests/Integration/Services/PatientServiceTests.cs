@@ -1,8 +1,11 @@
 using Backend.Data;
 using Backend.DTOs.request;
 using Backend.Entities;
+using Backend.Entities.Enums;
 using Backend.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Moq;
 
 namespace BackendTests.Integration.Services;
 
@@ -23,14 +26,20 @@ public class PatientServiceTests : IDisposable
 
         _dataContext = new DataContext(options);
 
+        var mockConfig = new Mock<IConfiguration>();
+        mockConfig.Setup(c => c["Jwt:Key"]).Returns("SuperSecretKeyForTesting");
+        var userService = new UserService(mockConfig.Object, _dataContext);
+
         // Seed Tutor
         var tutor = new Tutor
         {
             Name = "João Silva",
             Email = "joao@example.com",
             PhoneNumber = "912345678",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
             Address = "Rua do João",
-            ZipCode = "1234-567"
+            ZipCode = "1234-567",
+            Role = UserRole.Tutor
         };
         _dataContext.Tutors.Add(tutor);
         _dataContext.SaveChanges();
@@ -43,9 +52,11 @@ public class PatientServiceTests : IDisposable
             Name = "Maria Santos",
             Email = "maria@example.com",
             PhoneNumber = "912345679",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
             Address = "Rua da Maria",
             ZipCode = "1234-568",
-            TutorId = TutorId
+            TutorId = TutorId,
+            Role = UserRole.Patient
         };
 
         var patient2 = new Patient
@@ -53,9 +64,11 @@ public class PatientServiceTests : IDisposable
             Name = "Pedro Costa",
             Email = "pedro@example.com",
             PhoneNumber = "912345680",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("password"),
             Address = "Rua do Pedro",
             ZipCode = "1234-569",
-            TutorId = TutorId
+            TutorId = TutorId,
+            Role = UserRole.Patient
         };
 
         _dataContext.Patients.AddRange(patient1, patient2);
@@ -64,7 +77,7 @@ public class PatientServiceTests : IDisposable
         Patient1Id = patient1.Id;
         Patient2Id = patient2.Id;
 
-        _patientService = new PatientService(_dataContext);
+        _patientService = new PatientService(_dataContext, userService);
     }
 
     public void Dispose()
@@ -76,11 +89,12 @@ public class PatientServiceTests : IDisposable
     [Fact]
     public async Task CreatePatientAsyncShouldNotBeNull()
     {
-        var newPatient = new PatientRequestDto
+        var newPatient = new CreatePatientRequestDto
         {
             Name = "Ana Pereira",
-            Email = "ana@example.com",
+            Email = "anaNew@example.com", // Use unique email
             PhoneNumber = "912345681",
+            Password = "password123",
             Address = "Rua da Ana",
             ZipCode = "1234-570"
         };
@@ -94,11 +108,12 @@ public class PatientServiceTests : IDisposable
     [Fact]
     public async Task CreatePatientAsyncShouldBeNullWhenTutorNotExists()
     {
-        var newPatient = new PatientRequestDto
+        var newPatient = new CreatePatientRequestDto
         {
             Name = "Ana Pereira",
-            Email = "ana@example.com",
-            PhoneNumber = "912345681",
+            Email = "anaNew2@example.com", // Use unique email
+            PhoneNumber = "912345682", // Use unique phone
+            Password = "password123",
             Address = "Rua da Ana",
             ZipCode = "1234-570"
         };
@@ -155,7 +170,7 @@ public class PatientServiceTests : IDisposable
     [Fact]
     public async Task UpdatePatientAsyncShouldReturnTrue()
     {
-        var updatedPatient = new PatientRequestDto
+        var updatedPatient = new UpdatePatientRequestDto
         {
             Name = "Updated Maria",
             Email = "updated@example.com",
@@ -172,7 +187,7 @@ public class PatientServiceTests : IDisposable
     [Fact]
     public async Task UpdatePatientAsyncShouldReturnFalse()
     {
-        var updatedPatient = new PatientRequestDto
+        var updatedPatient = new UpdatePatientRequestDto
         {
             Name = "Updated Maria",
             Email = "updated@example.com",

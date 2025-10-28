@@ -4,6 +4,9 @@ using Backend.DTOs.response;
 using Backend.Entities;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using Backend.Exceptions;
 using Moq;
 
 namespace BackendTests.Unit.Controllers;
@@ -20,11 +23,10 @@ public class PatientsControllerTests
     }
 
     [Fact]
-    public async Task CreatePatient_ReturnsCreatedAtAction_WhenValidAndTutorExists()
+    public async Task CreatePatient_ReturnsCreatedAtAction_WhenValid()
     {
         // Arrange
-        var tutorId = 1;
-        var patientDto = new PatientRequestDto
+        var patientDto = new CreatePatientRequestDto
         {
             Name = "Maria Santos",
             Email = "maria@example.com",
@@ -40,15 +42,21 @@ public class PatientsControllerTests
             PhoneNumber = patientDto.PhoneNumber,
             Address = patientDto.Address,
             ZipCode = patientDto.ZipCode,
-            TutorId = tutorId
+            TutorId = 1
         };
 
         _mockPatientService
-            .Setup(s => s.CreatePatientAsync(tutorId, patientDto))
+            .Setup(s => s.CreatePatientAsync(1, patientDto))
             .ReturnsAsync(createdPatient);
 
+        var claims = new List<Claim>() { new Claim(ClaimTypes.NameIdentifier, "1") };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        var httpContext = new DefaultHttpContext { User = claimsPrincipal };
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
         // Act
-        var result = await _controller.CreatePatient(tutorId, patientDto);
+        var result = await _controller.CreatePatient(patientDto);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<ApiResponse<PatientResponseDto>>>(result);
@@ -58,62 +66,59 @@ public class PatientsControllerTests
         Assert.NotNull(response.Data);
         Assert.Equal(createdPatient.Id, response.Data.Id);
     }
-
     [Fact]
-    public async Task CreatePatient_ReturnsNotFound_WhenTutorDoesNotExist()
-    {
-        // Arrange
-        var tutorId = 999;
-        var patientDto = new PatientRequestDto
-        {
-            Name = "Maria Santos",
-            Email = "maria@example.com",
-            PhoneNumber = "912345679",
-            Address = "Rua da Maria",
-            ZipCode = "1234-568"
-        };
+       public async Task CreatePatient_ReturnsUnauthorized_WhenNoAuthenticatedTutor()
+       {
+           // Arrange
+           var patientDto = new CreatePatientRequestDto
+           {
+               Name = "Maria Santos",
+               Email = "maria@example.com",
+               PhoneNumber = "912345679",
+               Address = "Rua da Maria",
+               ZipCode = "1234-568"
+           };
 
-        _mockPatientService
-            .Setup(s => s.CreatePatientAsync(tutorId, patientDto))
-            .ReturnsAsync((Patient?)null);
+           // No claims, or invalid
+           var httpContext = new DefaultHttpContext { User = null };
+           _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
-        // Act
-        var result = await _controller.CreatePatient(tutorId, patientDto);
+           // Act
+           var result = await _controller.CreatePatient(patientDto);
 
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<PatientResponseDto>>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<PatientResponseDto>>(notFoundResult.Value!);
-        Assert.False(response.Success);
-        Assert.Equal("Não existe nenhum tutor com esse id", response.Message);
-    }
+           // Assert
+           var actionResult = Assert.IsType<ActionResult<ApiResponse<PatientResponseDto>>>(result);
+           var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(actionResult.Result);
+           var response = Assert.IsType<ApiResponse<PatientResponseDto>>(unauthorizedResult.Value!);
+           Assert.False(response.Success);
+           Assert.Equal("Nenhum tutor autenticado", response.Message);
+       }
+    
+       [Fact]
+       public async Task CreatePatient_ReturnsBadRequest_WhenModelStateInvalid()
+       {
+           // Arrange
+           var patientDto = new CreatePatientRequestDto
+           {
+               Name = "",
+               Email = "maria@example.com",
+               PhoneNumber = "912345679",
+               Address = "Rua da Maria",
+               ZipCode = "1234-568"
+           };
 
-    [Fact]
-    public async Task CreatePatient_ReturnsBadRequest_WhenModelStateInvalid()
-    {
-        // Arrange
-        var tutorId = 1;
-        var patientDto = new PatientRequestDto
-        {
-            Name = "",
-            Email = "maria@example.com",
-            PhoneNumber = "912345679",
-            Address = "Rua da Maria",
-            ZipCode = "1234-568"
-        };
+           _controller.ModelState.AddModelError("Name", "Name is required");
 
-        _controller.ModelState.AddModelError("Name", "Name is required");
+           // Act
+           var result = await _controller.CreatePatient(patientDto);
 
-        // Act
-        var result = await _controller.CreatePatient(tutorId, patientDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<PatientResponseDto>>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<PatientResponseDto>>(badRequestResult.Value!);
-        Assert.False(response.Success);
-        Assert.Equal("Erros de validação", response.Message);
-    }
+           // Assert
+           var actionResult = Assert.IsType<ActionResult<ApiResponse<PatientResponseDto>>>(result);
+           var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+           var response = Assert.IsType<ApiResponse<PatientResponseDto>>(badRequestResult.Value!);
+           Assert.False(response.Success);
+           Assert.Equal("Erros de validação", response.Message);
+       }
 
     [Fact]
     public async Task GetAllPatients_ReturnsOkWithList()
@@ -127,6 +132,12 @@ public class PatientsControllerTests
         _mockPatientService
             .Setup(s => s.GetAllPatientsAsync())
             .ReturnsAsync(patients);
+
+        var claims = new List<Claim>() { new Claim(ClaimTypes.Role, "Tutor") };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        var httpContext = new DefaultHttpContext { User = claimsPrincipal };
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
         // Act
         var result = await _controller.GetAllPatients();
@@ -241,7 +252,7 @@ public class PatientsControllerTests
     {
         // Arrange
         var patientId = 1;
-        var patientDto = new PatientRequestDto
+        var patientDto = new UpdatePatientRequestDto
         {
             Name = "Updated Maria",
             Email = "updated@example.com",
@@ -270,7 +281,7 @@ public class PatientsControllerTests
     {
         // Arrange
         var patientId = 1;
-        var patientDto = new PatientRequestDto
+        var patientDto = new UpdatePatientRequestDto
         {
             Name = "",
             Email = "updated@example.com",
@@ -297,7 +308,7 @@ public class PatientsControllerTests
     {
         // Arrange
         var patientId = 999;
-        var patientDto = new PatientRequestDto
+        var patientDto = new UpdatePatientRequestDto
         {
             Name = "Updated Maria",
             Email = "updated@example.com",

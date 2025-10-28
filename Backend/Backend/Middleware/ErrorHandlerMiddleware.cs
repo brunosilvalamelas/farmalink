@@ -1,5 +1,4 @@
 ﻿using Backend.Controllers;
-using Backend.Exceptions;
 
 namespace Backend.Middleware;
 
@@ -30,7 +29,7 @@ public class ErrorHandlerMiddleware
             await _next(context);
         }
         // Catch any unhandled exception
-        catch (Exception)
+        catch (Exception e)
         {
             // Set the HTTP response to 500 Internal Server Error
             context.Response.StatusCode = 500;
@@ -41,9 +40,9 @@ public class ErrorHandlerMiddleware
             var apiResponse = new ApiResponse<object>
             {
                 Success = false,
-                Message = "Erro Interno do Servidor",
+                Message = e.Message,
                 Data = null,
-                Errors = new List<ValidationError>()
+                Errors = null
             };
 
             // Write the ApiResponse as JSON to the response

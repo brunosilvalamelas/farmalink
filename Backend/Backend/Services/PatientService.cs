@@ -1,7 +1,7 @@
 ﻿using Backend.Data;
 using Backend.DTOs.request;
 using Backend.Entities;
-using Backend.Exceptions;
+using Backend.Entities.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services;
@@ -12,59 +12,53 @@ namespace Backend.Services;
 public class PatientService : IPatientService
 {
     private readonly DataContext _context;
+    private readonly IUserService _userService;
 
     /// <summary>
     /// Initializes a new instance of the PatientService.
     /// </summary>
     /// <param name="dataContext">The data context instance for database interactions.</param>
-    public PatientService(DataContext dataContext)
+    public PatientService(DataContext dataContext, IUserService userService)
     {
         _context = dataContext;
+        _userService = userService;
     }
 
     /// <summary>
-    /// Creates a new patient in the database.
+    /// Creates a new patient linked to the specified tutor, validating for duplicates.
     /// </summary>
-    /// <param name="tutorId">The ID of the tutor for the new patient.</param>
-    /// <param name="patientDto">The patient data to create.</param>
-    /// <returns>The created patient or null if the tutor does not exist.</returns>
-    public async Task<Patient?> CreatePatientAsync(int tutorId, PatientRequestDto patientDto)
+    /// <param name="loggedInTutorId">The ID of the tutor creating the patient.</param>
+    /// <param name="createPatientDto">The patient creation data.</param>
+    /// <returns>The created Patient entity.</returns>
+    public async Task<Patient> CreatePatientAsync(int loggedInTutorId, CreatePatientRequestDto createPatientDto)
     {
-        bool tutorExists = await _context.Tutors.AnyAsync(t => t.Id == tutorId);
-
-        if (!tutorExists)
+        var fields = new Dictionary<string, string>
         {
-            return null;
-        }
-
-        var errors = new List<ValidationError>();
-
-        var patients = await _context.Patients
-            .Select(p => new { p.Email, p.PhoneNumber })
-            .ToListAsync();
-
-        if (patients.Any(p => p.Email == patientDto.Email))
-            errors.Add(new ValidationError { Field = "email", Message = "Já existe um utente com esse email." });
-
-        if (patients.Any(p => p.PhoneNumber == patientDto.PhoneNumber))
-            errors.Add(new ValidationError
-                { Field = "phoneNumber", Message = "Já existe um utente com esse número de telemóvel." });
-
-        if (errors.Count > 0)
-            throw new ValidationException(errors);
-
-        var newPatient = new Patient
-        {
-            Name = patientDto.Name,
-            Email = patientDto.Email,
-            PhoneNumber = patientDto.PhoneNumber,
-            Address = patientDto.Address,
-            ZipCode = patientDto.ZipCode,
-            TutorId = tutorId
+            { "Email", createPatientDto.Email },
+            { "PhoneNumber", createPatientDto.PhoneNumber }
         };
 
-        await _context.Patients.AddAsync(newPatient);
+        await _userService.ValidateDuplicatesAsync<User>(fields);
+
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(createPatientDto.Password);
+
+        Console.WriteLine("IDDD" + loggedInTutorId);
+
+        Patient newPatient = new Patient
+        {
+            Name = createPatientDto.Name,
+            Email = createPatientDto.Email,
+            PasswordHash = hashedPassword,
+            PhoneNumber = createPatientDto.PhoneNumber,
+            ZipCode = createPatientDto.ZipCode,
+            Address = createPatientDto.Address,
+            TutorId = loggedInTutorId,
+            Role = UserRole.Patient,
+        };
+
+        _context.Patients.Add(newPatient);
         await _context.SaveChangesAsync();
+
         return newPatient;
     }
 
@@ -112,9 +106,9 @@ public class PatientService : IPatientService
     /// Updates an existing patient with new data.
     /// </summary>
     /// <param name="id">The ID of the patient to update.</param>
-    /// <param name="patientDto">The updated patient data.</param>
+    /// <param name="updatePatientDto">The updated patient data.</param>
     /// <returns>A ServiceResult indicating the success of the update operation.</returns>
-    public async Task<bool> UpdatePatientAsync(int id, PatientRequestDto patientDto)
+    public async Task<bool> UpdatePatientAsync(int id, UpdatePatientRequestDto updatePatientDto)
     {
         var patient = await _context.Patients.FindAsync(id);
 
@@ -123,23 +117,9 @@ public class PatientService : IPatientService
             return false;
         }
 
-        var errors = new List<ValidationError>();
-
-        if (await _context.Patients
-                .AnyAsync(p => p.Email == patientDto.Email && p.Id != id))
-            errors.Add(new ValidationError { Field = "email", Message = "Já existe um utente com esse email." });
-
-        if (await _context.Patients
-                .AnyAsync(p => p.PhoneNumber == patientDto.PhoneNumber && p.Id != id))
-            errors.Add(new ValidationError
-                { Field = "phoneNumber", Message = "O número de telefone já está em uso por outro utente." });
-
-        if (errors.Count > 0)
-        {
-            throw new ValidationException(errors);
-        }
-
-        _context.Entry(patient).CurrentValues.SetValues(patientDto);
+        patient.Name = updatePatientDto.Name;
+        patient.ZipCode = updatePatientDto.ZipCode;
+        patient.Address = updatePatientDto.Address;
 
         await _context.SaveChangesAsync();
         return true;

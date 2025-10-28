@@ -1,7 +1,7 @@
 namespace Backend.DTOs.response;
 
 /// <summary>
-/// Response DTO for patient information.
+/// Response DTO for patient information when retrieved by tutor ID, excluding tutor-specific details.
 /// </summary>
 public class PatientOfTutorResponseDto
 {

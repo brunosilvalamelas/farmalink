@@ -1,5 +1,6 @@
 ﻿using Backend.DTOs.request;
 using Backend.DTOs.response;
+using Backend.Entities.Enums;
 using Backend.Exceptions;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -14,32 +15,29 @@ namespace Backend.Controllers;
 public class TutorsController : BaseApiController
 {
     private readonly ITutorService _tutorService;
-    private readonly IPatientService _patientService;
 
     /// <summary>
     /// Initializes a new instance of the TutorsController.
     /// </summary>
     /// <param name="tutorService">The tutor service instance.</param>
-    /// <param name="patientService">The patient service instance.</param>
-    public TutorsController(ITutorService tutorService, IPatientService patientService)
+    public TutorsController(ITutorService tutorService)
     {
         _tutorService = tutorService;
-        _patientService = patientService;
     }
 
     /// <summary>
-    /// Creates a new tutor.
+    /// Creates a new tutor and generates an authentication token.
     /// </summary>
-    /// <param name="tutorDto">The tutor data to create.</param>
-    /// <returns>An IActionResult containing the created tutor or error information.</returns>
+    /// <param name="createTutorDto">The tutor creation data.</param>
+    /// <returns>An IActionResult containing the created tutor data and token or error information.</returns>
     [HttpPost]
-    public async Task<ActionResult<ApiResponse<TutorResponseDto>>> CreateTutor(
-        [FromBody] TutorRequestDto tutorDto)
+    public async Task<ActionResult<ApiResponse<CreateTutorResponseDto>>> CreateTutor(
+        [FromBody] CreateTutorRequestDto createTutorDto)
     {
         if (!ModelState.IsValid)
         {
             var errors = GetModelStateErrors();
-            return BadRequest(new ApiResponse<TutorResponseDto>
+            return BadRequest(new ApiResponse<CreateTutorResponseDto>
             {
                 Success = false,
                 Message = "Erros de validação",
@@ -49,27 +47,26 @@ public class TutorsController : BaseApiController
 
         try
         {
-            var createdTutor = await _tutorService.CreateTutorAsync(tutorDto);
-            var tutorResponse = new TutorResponseDto
+            var (createdTutor, token) = await _tutorService.CreateTutorAsync(createTutorDto);
+
+            var response = new CreateTutorResponseDto
             {
-                Id = createdTutor.Id,
+                Token = token,
                 Name = createdTutor.Name,
-                Email = createdTutor.Email,
-                PhoneNumber = createdTutor.PhoneNumber,
-                Address = createdTutor.Address,
-                ZipCode = createdTutor.ZipCode
+                Role = UserRole.Tutor
             };
 
-            return CreatedAtAction(nameof(GetTutorById), new { id = tutorResponse.Id },
-                new ApiResponse<TutorResponseDto>
-                    { Success = true, Data = tutorResponse, Message = "Tutor criado" });
+            return CreatedAtAction(nameof(GetTutorById), new { id = createdTutor.Id },
+                new ApiResponse<CreateTutorResponseDto>
+                    { Success = true, Data = response, Message = "Tutor registado" });
         }
         catch (ValidationException e)
         {
-            return Conflict(new ApiResponse<TutorResponseDto>
+            return Conflict(new ApiResponse<CreateTutorResponseDto>
                 { Success = false, Message = "Erros de validação", Errors = e.Errors });
         }
     }
+
 
     /// <summary>
     /// Retrieves all tutors.
@@ -128,11 +125,11 @@ public class TutorsController : BaseApiController
     /// Updates an existing tutor by ID.
     /// </summary>
     /// <param name="id">The ID of the tutor to update.</param>
-    /// <param name="tutorDto">The updated tutor data.</param>
+    /// <param name="updateTutorDto">The updated tutor data.</param>
     /// <returns>An IActionResult containing the result of the update operation.</returns>
     [HttpPut("{id}")]
     public async Task<ActionResult<ApiResponse<bool>>> UpdateTutorById(int id,
-        [FromBody] TutorRequestDto tutorDto)
+        [FromBody] UpdateTutorRequestDto updateTutorDto)
     {
         if (!ModelState.IsValid)
         {
@@ -145,7 +142,7 @@ public class TutorsController : BaseApiController
             });
         }
 
-        var updated = await _tutorService.UpdateTutorAsync(id, tutorDto);
+        var updated = await _tutorService.UpdateTutorAsync(id, updateTutorDto);
 
         if (!updated)
         {
@@ -172,66 +169,5 @@ public class TutorsController : BaseApiController
         }
 
         return Ok(new ApiResponse<bool> { Message = "Tutor removido" });
-    }
-
-    /// <summary>
-    /// Registers a new patient for the specified tutor.
-    /// </summary>
-    /// <param name="tutorId">The ID of the tutor for whom to register the patient.</param>
-    /// <param name="patientDto">The patient data to register.</param>
-    /// <returns>An IActionResult containing the created patient or error information.</returns>
-    [HttpPost("{tutorId}/patients")]
-    public async Task<ActionResult<ApiResponse<PatientResponseDto>>> RegisterPatient(
-        int tutorId,
-        [FromBody] PatientRequestDto patientDto)
-    {
-        if (!ModelState.IsValid)
-        {
-            var errors = GetModelStateErrors();
-            return BadRequest(new ApiResponse<PatientResponseDto>
-            {
-                Success = false,
-                Message = "Erros de validação",
-                Errors = errors
-            });
-        }
-
-        try
-        {
-            var patient = await _patientService.CreatePatientAsync(tutorId, patientDto);
-
-            if (patient == null)
-            {
-                return NotFound(new ApiResponse<PatientResponseDto>
-                {
-                    Success = false,
-                    Message = "Não existe nenhum tutor com esse id",
-                });
-            }
-
-            var response = new PatientResponseDto
-            {
-                Id = patient.Id,
-                Name = patient.Name,
-                Email = patient.Email,
-                PhoneNumber = patient.PhoneNumber,
-                Address = patient.Address,
-                ZipCode = patient.ZipCode
-            };
-
-            return CreatedAtAction(nameof(PatientsController.GetPatientById),
-                "Patients",
-                new { id = response.Id },
-                new ApiResponse<PatientResponseDto> { Success = true, Data = response, Message = "Utente criado" });
-        }
-        catch (ValidationException e)
-        {
-            return Conflict(new ApiResponse<PatientResponseDto>
-            {
-                Success = false,
-                Message = "Erros de validação",
-                Errors = e.Errors
-            });
-        }
     }
 }

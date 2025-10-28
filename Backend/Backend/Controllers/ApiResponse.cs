@@ -26,5 +26,5 @@ public class ApiResponse<T>
     /// <summary>
     /// Gets or sets the collection of validation errors, if any.
     /// </summary>
-    public IEnumerable<ValidationError> Errors { get; set; } = new List<ValidationError>();
+    public IEnumerable<ValidationError>? Errors { get; set; }
 }

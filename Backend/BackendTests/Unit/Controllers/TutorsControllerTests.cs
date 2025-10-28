@@ -11,63 +11,67 @@ namespace BackendTests.Unit.Controllers;
 public class TutorsControllerTests
 {
     private readonly Mock<ITutorService> _mockTutorService;
-    private readonly Mock<IPatientService> _mockPatientService;
     private readonly TutorsController _controller;
 
     public TutorsControllerTests()
     {
         _mockTutorService = new Mock<ITutorService>();
-        _mockPatientService = new Mock<IPatientService>();
-        _controller = new TutorsController(_mockTutorService.Object, _mockPatientService.Object);
+        _controller = new TutorsController(_mockTutorService.Object);
     }
 
     [Fact]
     public async Task CreateTutor_ReturnsCreatedAtAction_WhenValid()
     {
         // Arrange
-        var tutorDto = new TutorRequestDto
+        var tutorDto = new CreateTutorRequestDto
         {
             Name = "João Silva",
             Email = "joao@example.com",
             PhoneNumber = "912345678",
+            Password = "password123",
             Address = "Rua do João",
             ZipCode = "1234-567"
         };
-        var createdTutor = new Tutor
-        {
-            Id = 1,
-            Name = tutorDto.Name,
-            Email = tutorDto.Email,
-            PhoneNumber = tutorDto.PhoneNumber,
-            Address = tutorDto.Address,
-            ZipCode = tutorDto.ZipCode
-        };
+        var (createdTutor, token) = new Tuple<Tutor, string>(
+            new Tutor
+            {
+                Id = 1,
+                Name = tutorDto.Name,
+                Email = tutorDto.Email,
+                PhoneNumber = tutorDto.PhoneNumber,
+                Address = tutorDto.Address,
+                ZipCode = tutorDto.ZipCode
+            },
+            "token"
+        );
 
         _mockTutorService
             .Setup(s => s.CreateTutorAsync(tutorDto))
-            .ReturnsAsync(createdTutor);
+            .ReturnsAsync((createdTutor, token));
 
         // Act
         var result = await _controller.CreateTutor(tutorDto);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<TutorResponseDto>>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<CreateTutorResponseDto>>>(result);
         var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<TutorResponseDto>>(createdAtActionResult.Value);
+        var response = Assert.IsType<ApiResponse<CreateTutorResponseDto>>(createdAtActionResult.Value);
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
-        Assert.Equal(createdTutor.Id, response.Data.Id);
+        Assert.Equal(createdTutor.Name, response.Data.Name);
+        Assert.Equal("Tutor", response.Data.Role.ToString());
     }
 
     [Fact]
     public async Task CreateTutor_ReturnsBadRequest_WhenModelStateInvalid()
     {
         // Arrange
-        var tutorDto = new TutorRequestDto
+        var tutorDto = new CreateTutorRequestDto
         {
             Name = "",
             Email = "joao@example.com",
             PhoneNumber = "912345678",
+            Password = "password123",
             Address = "Rua do João",
             ZipCode = "1234-567"
         };
@@ -78,9 +82,9 @@ public class TutorsControllerTests
         var result = await _controller.CreateTutor(tutorDto);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<TutorResponseDto>>>(result);
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<CreateTutorResponseDto>>>(result);
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<TutorResponseDto>>(badRequestResult.Value);
+        var response = Assert.IsType<ApiResponse<CreateTutorResponseDto>>(badRequestResult.Value);
         Assert.False(response.Success);
         Assert.Equal("Erros de validação", response.Message);
     }
@@ -163,11 +167,9 @@ public class TutorsControllerTests
     {
         // Arrange
         var tutorId = 1;
-        var tutorDto = new TutorRequestDto
+        var tutorDto = new UpdateTutorRequestDto
         {
             Name = "Updated João",
-            Email = "updated@example.com",
-            PhoneNumber = "912345678",
             Address = "Updated Address",
             ZipCode = "1234-567"
         };
@@ -192,11 +194,9 @@ public class TutorsControllerTests
     {
         // Arrange
         var tutorId = 1;
-        var tutorDto = new TutorRequestDto
+        var tutorDto = new UpdateTutorRequestDto
         {
             Name = "",
-            Email = "updated@example.com",
-            PhoneNumber = "912345678",
             Address = "Updated Address",
             ZipCode = "1234-567"
         };
@@ -219,11 +219,9 @@ public class TutorsControllerTests
     {
         // Arrange
         var tutorId = 999;
-        var tutorDto = new TutorRequestDto
+        var tutorDto = new UpdateTutorRequestDto
         {
             Name = "Updated João",
-            Email = "updated@example.com",
-            PhoneNumber = "912345678",
             Address = "Updated Address",
             ZipCode = "1234-567"
         };
@@ -283,102 +281,5 @@ public class TutorsControllerTests
         var response = Assert.IsType<ApiResponse<bool>>(notFoundResult.Value);
         Assert.False(response.Success);
         Assert.Equal("Não existe nenhum tutor com esse id", response.Message);
-    }
-
-    [Fact]
-    public async Task RegisterPatient_ReturnsCreatedAtAction_WhenValid()
-    {
-        // Arrange
-        var tutorId = 1;
-        var patientDto = new PatientRequestDto
-        {
-            Name = "Maria Santos",
-            Email = "maria@example.com",
-            PhoneNumber = "912345679",
-            Address = "Rua da Maria",
-            ZipCode = "1234-568"
-        };
-        var createdPatient = new Patient
-        {
-            Id = 2,
-            Name = patientDto.Name,
-            Email = patientDto.Email,
-            PhoneNumber = patientDto.PhoneNumber,
-            Address = patientDto.Address,
-            ZipCode = patientDto.ZipCode,
-            TutorId = tutorId
-        };
-
-        _mockPatientService
-            .Setup(s => s.CreatePatientAsync(tutorId, patientDto))
-            .ReturnsAsync(createdPatient);
-
-        // Act
-        var result = await _controller.RegisterPatient(tutorId, patientDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<PatientResponseDto>>>(result);
-        var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<PatientResponseDto>>(createdAtActionResult.Value);
-        Assert.True(response.Success);
-
-        Assert.NotNull(response.Data);
-        Assert.Equal(createdPatient.Id, response.Data.Id);
-    }
-
-    [Fact]
-    public async Task RegisterPatient_ReturnsNotFound_WhenTutorDoesNotExist()
-    {
-        // Arrange
-        var tutorId = 999;
-        var patientDto = new PatientRequestDto
-        {
-            Name = "Maria Santos",
-            Email = "maria@example.com",
-            PhoneNumber = "912345679",
-            Address = "Rua da Maria",
-            ZipCode = "1234-568"
-        };
-
-        _mockPatientService
-            .Setup(s => s.CreatePatientAsync(tutorId, patientDto))
-            .ReturnsAsync((Patient?)null);
-
-        // Act
-        var result = await _controller.RegisterPatient(tutorId, patientDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<PatientResponseDto>>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<PatientResponseDto>>(notFoundResult.Value);
-        Assert.False(response.Success);
-        Assert.Equal("Não existe nenhum tutor com esse id", response.Message);
-    }
-
-    [Fact]
-    public async Task RegisterPatient_ReturnsBadRequest_WhenModelStateInvalid()
-    {
-        // Arrange
-        var tutorId = 1;
-        var patientDto = new PatientRequestDto
-        {
-            Name = "",
-            Email = "maria@example.com",
-            PhoneNumber = "912345679",
-            Address = "Rua da Maria",
-            ZipCode = "1234-568"
-        };
-
-        _controller.ModelState.AddModelError("Name", "Name is required");
-
-        // Act
-        var result = await _controller.RegisterPatient(tutorId, patientDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<ApiResponse<PatientResponseDto>>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var response = Assert.IsType<ApiResponse<PatientResponseDto>>(badRequestResult.Value);
-        Assert.False(response.Success);
-        Assert.Equal("Erros de validação", response.Message);
     }
 }
