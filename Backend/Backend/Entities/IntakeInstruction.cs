@@ -1,9 +1,8 @@
-namespace Backend.Entities;
-
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
+namespace Backend.Entities
 {
     /// <summary>
     /// Represents intake instructions for medications, optionally associated with routines.
