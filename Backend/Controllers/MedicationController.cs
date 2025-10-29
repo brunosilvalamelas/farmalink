@@ -15,7 +15,6 @@ namespace Backend.Controllers
             _service = service;
         }
 
-        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Medication>>> GetAll()
         {
@@ -23,7 +22,6 @@ namespace Backend.Controllers
             return Ok(meds);
         }
 
-       
         [HttpGet("{id}")]
         public async Task<ActionResult<Medication>> GetById(int id)
         {
@@ -34,7 +32,16 @@ namespace Backend.Controllers
             return Ok(med);
         }
 
-        
+        [HttpPost]
+        public async Task<ActionResult<Medication>> Add([FromBody] Medication medication)
+        {
+            if (medication == null)
+                return BadRequest(new { message = "Dados inválidos." });
+
+            var created = await _service.AddAsync(medication);
+            return CreatedAtAction(nameof(GetById), new { id = created.MedicationId }, created);
+        }
+
         [HttpPut("{id}")]
         public async Task<ActionResult<Medication>> Update(int id, [FromBody] Medication medication)
         {
@@ -46,6 +53,16 @@ namespace Backend.Controllers
                 return NotFound(new { message = "Medicamento não encontrado." });
 
             return Ok(updated);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var deleted = await _service.DeleteAsync(id);
+            if (!deleted)
+                return NotFound(new { message = "Medicamento não encontrado." });
+
+            return NoContent();
         }
     }
 }
