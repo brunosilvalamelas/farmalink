@@ -36,6 +36,17 @@ public class DataContext : DbContext
     /// DbSet for managing User entities in the database.
     /// </summary>
     public DbSet<User> Users { get; set; }
+    
+    /// <summary>
+    /// DbSet for managing Notifications entities in the database.
+    /// </summary>
+    public DbSet<Notification> Notifications { get; set; }
+    
+    public DbSet<IntakeInstruction> IntakeInstructions { get; set; }
+
+    public DbSet<Routine> Routines { get; set; }
+
+    
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
