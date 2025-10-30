@@ -8,11 +8,6 @@ namespace Backend.DTOs.response;
 public class LoginResponseDto
 {
     /// <summary>
-    /// JWT authentication token for the logged-in user.
-    /// </summary>
-    public string Token { get; set; } = string.Empty;
-
-    /// <summary>
     /// Full name of the logged-in user.
     /// </summary>
     public string Name { get; set; } = string.Empty;
