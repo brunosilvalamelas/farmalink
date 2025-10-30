@@ -29,9 +29,15 @@ public class PatientService : IPatientService
     /// </summary>
     /// <param name="loggedInTutorId">The ID of the tutor creating the patient.</param>
     /// <param name="createPatientDto">The patient creation data.</param>
-    /// <returns>The created Patient entity.</returns>
-    public async Task<Patient> CreatePatientAsync(int loggedInTutorId, CreatePatientRequestDto createPatientDto)
+    /// <returns>The created Patient entity or null if tutor doesn't exist.</returns>
+    public async Task<Patient?> CreatePatientAsync(int loggedInTutorId, CreatePatientRequestDto createPatientDto)
     {
+        var tutorExists = await _context.Tutors.AnyAsync(t => t.Id == loggedInTutorId);
+        if (!tutorExists)
+        {
+            return null;
+        }
+
         var fields = new Dictionary<string, string>
         {
             { "Email", createPatientDto.Email },
@@ -41,8 +47,6 @@ public class PatientService : IPatientService
         await _userService.ValidateDuplicatesAsync<User>(fields);
 
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(createPatientDto.Password);
-
-        Console.WriteLine("IDDD" + loggedInTutorId);
 
         Patient newPatient = new Patient
         {
