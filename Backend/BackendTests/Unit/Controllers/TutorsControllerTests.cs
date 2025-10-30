@@ -2,7 +2,9 @@ using Backend.Controllers;
 using Backend.DTOs.request;
 using Backend.DTOs.response;
 using Backend.Entities;
+using Backend.Exceptions;
 using Backend.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -49,6 +51,9 @@ public class TutorsControllerTests
             .Setup(s => s.CreateTutorAsync(tutorDto))
             .ReturnsAsync((createdTutor, token));
 
+        var httpContext = new DefaultHttpContext();
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
         // Act
         var result = await _controller.CreateTutor(tutorDto);
 
@@ -85,6 +90,39 @@ public class TutorsControllerTests
         var actionResult = Assert.IsType<ActionResult<ApiResponse<CreateTutorResponseDto>>>(result);
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
         var response = Assert.IsType<ApiResponse<CreateTutorResponseDto>>(badRequestResult.Value);
+        Assert.False(response.Success);
+        Assert.Equal("Erros de validação", response.Message);
+    }
+
+    [Fact]
+    public async Task CreateTutor_ReturnsConflict_WhenValidationExceptionThrown()
+    {
+        // Arrange
+        var tutorDto = new CreateTutorRequestDto
+        {
+            Name = "João Silva",
+            Email = "duplicate@example.com",
+            PhoneNumber = "912345678",
+            Password = "password123",
+            Address = "Rua do João",
+            ZipCode = "1234-567"
+        };
+
+        _mockTutorService
+            .Setup(s => s.CreateTutorAsync(tutorDto))
+            .ThrowsAsync(new ValidationException(new List<ValidationError>()));
+
+        var httpContext = new DefaultHttpContext();
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+        // Act
+        var result = await _controller.CreateTutor(tutorDto);
+
+        // Assert
+        var actionResult = Assert.IsType<ActionResult<ApiResponse<CreateTutorResponseDto>>>(result);
+        var conflictResult = Assert.IsType<ConflictObjectResult>(actionResult.Result);
+        Assert.Equal(409, conflictResult.StatusCode);
+        var response = Assert.IsType<ApiResponse<CreateTutorResponseDto>>(conflictResult.Value);
         Assert.False(response.Success);
         Assert.Equal("Erros de validação", response.Message);
     }

@@ -5,6 +5,7 @@ using Backend.DTOs.response;
 using Backend.Entities;
 using Backend.Entities.Enums;
 using Backend.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -141,6 +142,9 @@ public class TutorsControllerTests : IDisposable
             Address = "Rua da Ana",
             ZipCode = "1234-570"
         };
+
+        var httpContext = new DefaultHttpContext();
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
         // Act
         var result = await _controller.CreateTutor(newTutor);
