@@ -1,3 +1,8 @@
+/// <summary>
+/// Entry point for the FarmaLink backend application.
+/// Configures services, authentication, and middleware for the ASP.NET Core web application.
+/// </summary>
+
 using System.Security.Claims;
 using System.Text;
 using Backend.Data;
@@ -67,7 +72,6 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
         };
 
-        // 🔑 This is the important part:
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>

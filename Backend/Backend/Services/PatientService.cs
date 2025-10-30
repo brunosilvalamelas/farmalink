@@ -69,7 +69,7 @@ public class PatientService : IPatientService
     /// <summary>
     /// Retrieves all patients from the database.
     /// </summary>
-    /// <returns>A ServiceResult containing the list of patients.</returns>
+    /// <returns>The list of patients.</returns>
     public async Task<List<Patient>> GetAllPatientsAsync()
     {
         var patients = await _context.Patients.Include(p => p.Tutor).ToListAsync();
@@ -80,7 +80,7 @@ public class PatientService : IPatientService
     /// Retrieves a patient by their ID.
     /// </summary>
     /// <param name="id">The ID of the patient to retrieve.</param>
-    /// <returns>A ServiceResult containing the patient or a not found result.</returns>
+    /// <returns>The patient if found, or null otherwise.</returns>
     public async Task<Patient?> GetPatientByIdAsync(int id)
     {
         var patient = await _context.Patients.Include(p => p.Tutor).FirstOrDefaultAsync(p => p.Id == id);
@@ -111,7 +111,7 @@ public class PatientService : IPatientService
     /// </summary>
     /// <param name="id">The ID of the patient to update.</param>
     /// <param name="updatePatientDto">The updated patient data.</param>
-    /// <returns>A ServiceResult indicating the success of the update operation.</returns>
+    /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdatePatientAsync(int id, UpdatePatientRequestDto updatePatientDto)
     {
         var patient = await _context.Patients.FindAsync(id);
@@ -133,7 +133,7 @@ public class PatientService : IPatientService
     /// Deletes a patient by their ID.
     /// </summary>
     /// <param name="id">The ID of the patient to delete.</param>
-    /// <returns>A ServiceResult indicating the success of the delete operation.</returns>
+    /// <returns>True if the deletion was successful, false otherwise.</returns>
     public async Task<bool> DeletePatientAsync(int id)
     {
         var patient = await _context.Patients.FindAsync(id);

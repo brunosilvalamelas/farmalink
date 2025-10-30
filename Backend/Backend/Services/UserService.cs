@@ -19,6 +19,11 @@ public class UserService : IUserService
     private readonly IConfiguration _configuration;
     private readonly DataContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of the UserService.
+    /// </summary>
+    /// <param name="configuration">The configuration instance for accessing settings like JWT keys.</param>
+    /// <param name="context">The database context for data operations.</param>
     public UserService(IConfiguration configuration, DataContext context)
     {
         _configuration = configuration;
