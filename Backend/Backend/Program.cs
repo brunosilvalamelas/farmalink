@@ -18,6 +18,7 @@ builder.Services.AddDbContext<DataContext>(options =>
 builder.Services.AddScoped<ITutorService, TutorService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IMedicationService, MedicationService>();
 builder.Services.AddControllers();
 
 // Disable automatic ProblemDetails for invalid model state to allow custom handling

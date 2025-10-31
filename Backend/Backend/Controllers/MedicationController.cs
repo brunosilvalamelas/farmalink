@@ -1,3 +1,4 @@
+using Backend.DTOs.request;
 using Backend.Entities;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -8,9 +9,9 @@ namespace Backend.Controllers
     [Route("api/[controller]")]
     public class MedicationsController : ControllerBase
     {
-        private readonly MedicationService _service;
-
-        public MedicationsController(MedicationService service)
+        private readonly IMedicationService _service;
+        
+        public MedicationsController(IMedicationService service)
         {
             _service = service;
         }
@@ -31,22 +32,47 @@ namespace Backend.Controllers
 
             return Ok(med);
         }
+        
+        [HttpGet("by-patient/{patientId}")]
+        public async Task<ActionResult<IEnumerable<Medication>>> GetByPatientId(int patientId)
+        {
+            var meds = await _service.GetMedicationsByPatientIdAsync(patientId);
+            return Ok(meds);
+        }
 
         [HttpPost]
-        public async Task<ActionResult<Medication>> Add([FromBody] Medication medication)
+        public async Task<ActionResult<Medication>> Add([FromBody] CreateMedicationRequestDto medicationDto)
         {
-            if (medication == null)
+            if (medicationDto == null)
                 return BadRequest(new { message = "Dados inválidos." });
+
+            var medication = new Medication
+            {
+                PatientId = medicationDto.PatientId,
+                Name = medicationDto.Name,
+                QuantityOnHand = medicationDto.QuantityOnHand,
+                QuantityPerUnit = medicationDto.QuantityPerUnit,
+                LowStockThreshold = medicationDto.LowStockThreshold
+            };
 
             var created = await _service.AddAsync(medication);
             return CreatedAtAction(nameof(GetById), new { id = created.MedicationId }, created);
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult<Medication>> Update(int id, [FromBody] Medication medication)
+        [HttpPost("{id}")]
+        public async Task<ActionResult<Medication>> UpdateMedication(int id, [FromBody] UpdateMedicationRequestDto updateDto)
         {
-            if (medication == null)
+            if (updateDto == null)
                 return BadRequest(new { message = "Dados inválidos." });
+
+            var medication = new Medication
+            {
+                PatientId = updateDto.PatientId,
+                Name = updateDto.Name,
+                QuantityOnHand = updateDto.QuantityOnHand,
+                QuantityPerUnit = updateDto.QuantityPerUnit,
+                LowStockThreshold = updateDto.LowStockThreshold
+            };
 
             var updated = await _service.UpdateAsync(id, medication);
             if (updated == null)
@@ -65,4 +91,6 @@ namespace Backend.Controllers
             return NoContent();
         }
     }
+
+    
 }
