@@ -48,7 +48,8 @@ jobs:
             /o:"brunosilvalamelas" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.login="${{ secrets.SONAR_TOKEN }}" \
-            /d:sonar.cs.opencover.reportsPaths="Backend/BackendTests/coverage/coverage.xml"
+            /d:sonar.cs.opencover.reportsPaths="Backend/BackendTests/coverage/coverage.xml" \
+            /d:sonar.qualitygate.wait=false
 
       # 8. Restore dependencies
       - name: Restore dependencies
