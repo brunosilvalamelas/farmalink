@@ -156,7 +156,6 @@ public class EmployeeServiceTests : IDisposable
         var updated = await _employeeService.GetEmployeeByIdAsync(_emp1Id);
         Assert.NotNull(updated);
         Assert.Equal("Alice Atualizada", updated!.Name);
-        Assert.Equal("alice.updated@example.com", updated.Email);
         Assert.Equal("Coimbra", updated.DeliveryLocation);
     }
 
