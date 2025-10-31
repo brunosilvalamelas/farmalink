@@ -1,4 +1,4 @@
-name: .NET CI with SonarQube and Coverage
+name: .NET CI with Coverage
 
 on:
   pull_request:
@@ -22,50 +22,27 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      # 3. Setup Java (required by SonarScanner)
-      - uses: actions/setup-java@v4
-        with:
-          java-version: 17
-          distribution: "zulu"
-
-      # 4. Install ReportGenerator tool
+      # 3. Install ReportGenerator tool
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
-      # 5. Install SonarScanner tool
-      - name: Install SonarScanner
-        run: dotnet tool install --global dotnet-sonarscanner
-
-      # 6. Add .NET tools to PATH
+      # 4. Add .NET tools to PATH
       - name: Add .NET tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      # 7. Begin SonarQube analysis
-      - name: Begin SonarQube analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          dotnet-sonarscanner begin \
-            /k:"brunosilvalamelas_farmalink" \
-            /o:"brunosilvalamelas" \
-            /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.login="${{ secrets.SONAR_TOKEN }}" \
-            /d:sonar.cs.opencover.reportsPaths="Backend/BackendTests/coverage/coverage.xml" \
-            /d:sonar.qualitygate.wait=false
-
-      # 8. Restore dependencies
+      # 5. Restore dependencies
       - name: Restore dependencies
         run: dotnet restore "Backend/Backend.sln"
 
-      # 9. Build the solution
+      # 6. Build the solution
       - name: Build
         run: dotnet build "Backend/Backend.sln"
 
-      # 10. Ensure coverage folder exists
+      # 7. Ensure coverage folder exists
       - name: Ensure coverage folder exists
         run: mkdir -p Backend/BackendTests/coverage
 
-      # 11. Run tests with coverage using coverlet.msbuild
+      # 8. Run tests with coverage using coverlet.msbuild
       - name: Run tests with coverage
         working-directory: Backend/BackendTests
         run: |
@@ -74,7 +51,7 @@ jobs:
             /p:CoverletOutput=coverage/coverage.xml \
             /p:CoverletOutputFormat=opencover
 
-      # 12. Generate HTML coverage report
+      # 9. Generate HTML coverage report
       - name: Generate HTML coverage report
         working-directory: Backend/BackendTests
         run: |
@@ -83,15 +60,9 @@ jobs:
             -targetdir:coverage-report \
             -reporttypes:Html
 
-      # 13. Upload coverage report as artifact
+      # 10. Upload coverage report as artifact
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: Backend/BackendTests/coverage-report
-
-      # 14. End SonarQube analysis
-      - name: End SonarQube analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
