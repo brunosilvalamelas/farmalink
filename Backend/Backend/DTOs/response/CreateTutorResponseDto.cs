@@ -8,11 +8,6 @@ namespace Backend.DTOs.response;
 public class CreateTutorResponseDto
 {
     /// <summary>
-    /// JWT authentication token for the created tutor.
-    /// </summary>
-    public string Token { get; set; } = string.Empty;
-
-    /// <summary>
     /// Full name of the created tutor.
     /// </summary>
     public string Name { get; set; } = string.Empty;

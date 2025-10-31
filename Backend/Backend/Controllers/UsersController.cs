@@ -10,15 +10,15 @@ namespace Backend.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class UserController : BaseApiController
+public class UsersController : BaseApiController
 {
     private readonly IUserService _userService;
 
     /// <summary>
-    /// Initializes a new instance of the UserController.
+    /// Initializes a new instance of the UsersController.
     /// </summary>
     /// <param name="userService">The user service instance.</param>
-    public UserController(IUserService userService)
+    public UsersController(IUserService userService)
     {
         _userService = userService;
     }
@@ -42,13 +42,12 @@ public class UserController : BaseApiController
             });
         }
 
-        var result = await _userService.AuthenticateUserAsync(loginRequest.Email, loginRequest.Password);
-        if (result == null)
+        var authResult = await _userService.AuthenticateUserAsync(loginRequest.Email, loginRequest.Password);
+        if (authResult == null)
         {
             return Unauthorized(new ApiResponse<LoginResponseDto>
                 { Success = false, Message = "Email ou password inválido" });
         }
-
 
         var cookieOptions = new CookieOptions
         {
@@ -58,9 +57,10 @@ public class UserController : BaseApiController
             Expires = DateTimeOffset.UtcNow.AddMinutes(120)
         };
 
-        Response.Cookies.Append("access_token", result.Token, cookieOptions);
+        Response.Cookies.Append("access_token", authResult.Token, cookieOptions);
 
 
-        return Ok(new ApiResponse<LoginResponseDto> { Message = "Autenticação efetuada", Data = result });
+        return Ok(new ApiResponse<LoginResponseDto>
+            { Message = "Autenticação efetuada", Data = authResult.LoginResponse });
     }
 }

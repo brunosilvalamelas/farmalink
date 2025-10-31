@@ -4,7 +4,7 @@ namespace Backend.Entities;
 
 /// <summary>
 /// Represents a tutor within the system.
-/// Inherits common personal information from <see cref="Person"/>.
+/// Inherits common personal information from <see cref="User"/>.
 /// A tutor can be associated with multiple patients.
 /// </summary>
 public class Tutor : User

@@ -120,6 +120,75 @@ public class PatientsControllerTests
            Assert.Equal("Erros de validação", response.Message);
        }
 
+       [Fact]
+       public async Task CreatePatient_ReturnsConflict_WhenValidationExceptionThrown()
+       {
+           // Arrange
+           var patientDto = new CreatePatientRequestDto
+           {
+               Name = "Maria Santos",
+               Email = "maria@example.com",
+               PhoneNumber = "912345679",
+               Address = "Rua da Maria",
+               ZipCode = "1234-568"
+           };
+
+           var claims = new List<Claim>() { new Claim(ClaimTypes.NameIdentifier, "1") };
+           var identity = new ClaimsIdentity(claims, "TestAuthType");
+           var claimsPrincipal = new ClaimsPrincipal(identity);
+           var httpContext = new DefaultHttpContext { User = claimsPrincipal };
+           _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+           _mockPatientService
+               .Setup(s => s.CreatePatientAsync(1, patientDto))
+               .ThrowsAsync(new ValidationException(new List<ValidationError>()));
+
+           // Act
+           var result = await _controller.CreatePatient(patientDto);
+
+           // Assert
+           var actionResult = Assert.IsType<ActionResult<ApiResponse<PatientResponseDto>>>(result);
+           var conflictResult = Assert.IsType<ConflictObjectResult>(actionResult.Result);
+           Assert.Equal(409, conflictResult.StatusCode);
+           var response = Assert.IsType<ApiResponse<PatientResponseDto>>(conflictResult.Value!);
+           Assert.False(response.Success);
+           Assert.Equal("Erros de validação", response.Message);
+       }
+
+       [Fact]
+       public async Task CreatePatient_ReturnsNotFound_WhenTutorDoesNotExist()
+       {
+           // Arrange
+           var patientDto = new CreatePatientRequestDto
+           {
+               Name = "Maria Santos",
+               Email = "maria@example.com",
+               PhoneNumber = "912345679",
+               Address = "Rua da Maria",
+               ZipCode = "1234-568"
+           };
+
+           var claims = new List<Claim>() { new Claim(ClaimTypes.NameIdentifier, "1") };
+           var identity = new ClaimsIdentity(claims, "TestAuthType");
+           var claimsPrincipal = new ClaimsPrincipal(identity);
+           var httpContext = new DefaultHttpContext { User = claimsPrincipal };
+           _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+           _mockPatientService
+               .Setup(s => s.CreatePatientAsync(1, patientDto))
+               .ReturnsAsync((Patient?)null);
+
+           // Act
+           var result = await _controller.CreatePatient(patientDto);
+
+           // Assert
+           var actionResult = Assert.IsType<ActionResult<ApiResponse<PatientResponseDto>>>(result);
+           var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
+           var response = Assert.IsType<ApiResponse<PatientResponseDto>>(notFoundResult.Value!);
+           Assert.False(response.Success);
+           Assert.Equal("Tutor não encontrado", response.Message);
+       }
+
     [Fact]
     public async Task GetAllPatients_ReturnsOkWithList()
     {

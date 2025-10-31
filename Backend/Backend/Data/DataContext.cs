@@ -49,6 +49,10 @@ public class DataContext : DbContext
     
 
 
+    /// <summary>
+    /// Configures the model relationships and mappings for the entities.
+    /// </summary>
+    /// <param name="modelBuilder">The model builder used to configure the entities.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
