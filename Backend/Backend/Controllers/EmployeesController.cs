@@ -1,6 +1,5 @@
 ﻿using Backend.DTOs.request;
 using Backend.DTOs.response;
-using Backend.Entities.Enums;
 using Backend.Exceptions;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -26,18 +25,18 @@ public class EmployeesController : BaseApiController
     }
 
     /// <summary>
-    /// Creates a new employee and generates an authentication token.
+    /// Creates a new employee.
     /// </summary>
     /// <param name="createEmployeeDto">The employee creation data.</param>
-    /// <returns>An IActionResult containing the created employee data and token or error information.</returns>
+    /// <returns>An IActionResult containing the created employee data or error information.</returns>
     [HttpPost]
-    public async Task<ActionResult<ApiResponse<CreateEmployeeResponseDto>>> CreateEmployee(
+    public async Task<ActionResult<ApiResponse<EmployeeResponseDto>>> CreateEmployee(
         [FromBody] CreateEmployeeRequestDto createEmployeeDto)
     {
         if (!ModelState.IsValid)
         {
             var errors = GetModelStateErrors();
-            return BadRequest(new ApiResponse<CreateEmployeeResponseDto>
+            return BadRequest(new ApiResponse<EmployeeResponseDto>
             {
                 Success = false,
                 Message = "Erros de validação",
@@ -47,22 +46,24 @@ public class EmployeesController : BaseApiController
 
         try
         {
-            var (createdEmployee, token) = await _employeeService.CreateEmployeeAsync(createEmployeeDto);
+            var createdEmployee = await _employeeService.CreateEmployeeAsync(createEmployeeDto);
 
-            var response = new CreateEmployeeResponseDto
+            var employeeResponse = new EmployeeResponseDto()
             {
-                Token = token,
+                Id = createdEmployee.Id,
                 Name = createdEmployee.Name,
-                Role = UserRole.Employee
+                Email = createdEmployee.Email,
+                PhoneNumber = createdEmployee.PhoneNumber,
+                DeliveryLocation = createdEmployee.DeliveryLocation
             };
 
             return CreatedAtAction(nameof(GetEmployeeById), new { id = createdEmployee.Id },
-                new ApiResponse<CreateEmployeeResponseDto>
-                    { Success = true, Data = response, Message = "Employee registado" });
+                new ApiResponse<EmployeeResponseDto>
+                    { Message = "Funcionário registado", Data = employeeResponse });
         }
         catch (ValidationException e)
         {
-            return Conflict(new ApiResponse<CreateEmployeeResponseDto>
+            return Conflict(new ApiResponse<EmployeeResponseDto>
                 { Success = false, Message = "Erros de validação", Errors = e.Errors });
         }
     }
@@ -71,7 +72,7 @@ public class EmployeesController : BaseApiController
     /// <summary>
     /// Retrieves all employees.
     /// </summary>
-    /// <returns>An IActionResult containing the list of employee or error information.</returns>
+    /// <returns>An IActionResult containing the list of employees or error information.</returns>
     [HttpGet]
     public async Task<ActionResult<ApiResponse<List<EmployeeResponseDto>>>> GetAllEmployees()
     {
@@ -87,11 +88,11 @@ public class EmployeesController : BaseApiController
         }).ToList();
 
         return Ok(new ApiResponse<List<EmployeeResponseDto>>
-            { Message = "Employees encontrados.", Data = employeesResponse });
+            { Message = "Funcionários encontrados.", Data = employeesResponse });
     }
 
     /// <summary>
-    /// Retrieves a employee by their ID.
+    /// Retrieves an employee by their ID.
     /// </summary>
     /// <param name="id">The ID of the employee to retrieve.</param>
     /// <returns>An IActionResult containing the employee data or error information.</returns>
@@ -103,7 +104,7 @@ public class EmployeesController : BaseApiController
         if (employee == null)
         {
             return NotFound(new ApiResponse<EmployeeResponseDto>
-                { Success = false, Message = "Não existe nenhum employee com esse id" });
+                { Success = false, Message = "Não existe nenhum funcionário com esse id" });
         }
 
 
@@ -116,7 +117,7 @@ public class EmployeesController : BaseApiController
                 PhoneNumber = employee.PhoneNumber,
                 DeliveryLocation = employee.DeliveryLocation
             };
-        return Ok(new ApiResponse<EmployeeResponseDto> { Message = "Employee encontrado", Data = employeeResponse });
+        return Ok(new ApiResponse<EmployeeResponseDto> { Message = "Funcionário encontrado", Data = employeeResponse });
     }
 
     /// <summary>
@@ -145,14 +146,14 @@ public class EmployeesController : BaseApiController
         if (!updated)
         {
             return NotFound(
-                new ApiResponse<bool> { Success = false, Message = "Não existe nenhum employee com esse id" });
+                new ApiResponse<bool> { Success = false, Message = "Não existe nenhum funcionário com esse id" });
         }
 
-        return Ok(new ApiResponse<bool> { Message = "Os dados do employee foram atualizados" });
+        return Ok(new ApiResponse<bool> { Message = "Os dados do funcionário foram atualizados" });
     }
 
     /// <summary>
-    /// Deletes a employee by their ID.
+    /// Deletes an employee by their ID.
     /// </summary>
     /// <param name="id">The ID of the employee to delete.</param>
     /// <returns>An IActionResult containing the result of the delete operation.</returns>
@@ -163,9 +164,9 @@ public class EmployeesController : BaseApiController
         if (!deleted)
         {
             return NotFound(
-                new ApiResponse<bool> { Success = false, Message = "Não existe nenhum employee com esse id" });
+                new ApiResponse<bool> { Success = false, Message = "Não existe nenhum funcionário com esse id" });
         }
 
-        return Ok(new ApiResponse<bool> { Message = "Employee removido" });
+        return Ok(new ApiResponse<bool> { Message = "Funcionário removido" });
     }
 }

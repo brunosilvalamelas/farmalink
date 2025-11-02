@@ -30,8 +30,14 @@ public class PatientService : IPatientService
     /// <param name="loggedInTutorId">The ID of the tutor creating the patient.</param>
     /// <param name="createPatientDto">The patient creation data.</param>
     /// <returns>The created Patient entity.</returns>
-    public async Task<Patient> CreatePatientAsync(int loggedInTutorId, CreatePatientRequestDto createPatientDto)
+    public async Task<Patient?> CreatePatientAsync(int loggedInTutorId, CreatePatientRequestDto createPatientDto)
     {
+        var tutorExists = await _context.Tutors.AnyAsync(t => t.Id == loggedInTutorId);
+        if (!tutorExists)
+        {
+            return null;
+        }
+        
         var fields = new Dictionary<string, string>
         {
             { "Email", createPatientDto.Email },

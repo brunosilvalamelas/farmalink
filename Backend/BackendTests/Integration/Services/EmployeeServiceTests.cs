@@ -101,7 +101,7 @@ public class EmployeeServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateEmployeeAsync_ShouldCreate_AndReturnToken()
+    public async Task CreateEmployeeAsync_ShouldCreate()
     {
         var dto = new CreateEmployeeRequestDto
         {
@@ -112,13 +112,12 @@ public class EmployeeServiceTests : IDisposable
             DeliveryLocation = "Braga",
         };
 
-        var (employee, token) = await _employeeService.CreateEmployeeAsync(dto);
+        var employee = await _employeeService.CreateEmployeeAsync(dto);
 
         Assert.NotNull(employee);
         Assert.True(employee.Id > 0);
         Assert.Equal(dto.Name, employee.Name);
         Assert.Equal(UserRole.Employee, employee.Role);
-        Assert.False(string.IsNullOrWhiteSpace(token));
     }
 
     [Fact]

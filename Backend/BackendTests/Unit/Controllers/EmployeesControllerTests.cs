@@ -45,19 +45,18 @@ public class EmployeesControllerTests
 
         _mockEmployeeService
             .Setup(s => s.CreateEmployeeAsync(dto))
-            .ReturnsAsync((created, "token"));
+            .ReturnsAsync(created);
 
         // Act
         var result = await _controller.CreateEmployee(dto);
 
         // Assert
-        var action = Assert.IsType<ActionResult<ApiResponse<CreateEmployeeResponseDto>>>(result);
+        var action = Assert.IsType<ActionResult<ApiResponse<EmployeeResponseDto>>>(result);
         var createdAt = Assert.IsType<CreatedAtActionResult>(action.Result);
-        var response = Assert.IsType<ApiResponse<CreateEmployeeResponseDto>>(createdAt.Value);
+        var response = Assert.IsType<ApiResponse<EmployeeResponseDto>>(createdAt.Value);
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
         Assert.Equal(dto.Name, response.Data!.Name);
-        Assert.Equal(UserRole.Employee, response.Data.Role);
     }
 
     [Fact]
@@ -78,9 +77,9 @@ public class EmployeesControllerTests
         var result = await _controller.CreateEmployee(dto);
 
         // Assert
-        var action = Assert.IsType<ActionResult<ApiResponse<CreateEmployeeResponseDto>>>(result);
+        var action = Assert.IsType<ActionResult<ApiResponse<EmployeeResponseDto>>>(result);
         var bad = Assert.IsType<BadRequestObjectResult>(action.Result);
-        var response = Assert.IsType<ApiResponse<CreateEmployeeResponseDto>>(bad.Value);
+        var response = Assert.IsType<ApiResponse<EmployeeResponseDto>>(bad.Value);
         Assert.False(response.Success);
         Assert.Equal("Erros de validação", response.Message);
     }
@@ -107,7 +106,7 @@ public class EmployeesControllerTests
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
         Assert.Single(response.Data!);
-        Assert.Equal("Employees encontrados.", response.Message);
+        Assert.Equal("Funcionários encontrados.", response.Message);
     }
 
     [Fact]
@@ -147,7 +146,7 @@ public class EmployeesControllerTests
         var nf = Assert.IsType<NotFoundObjectResult>(action.Result);
         var response = Assert.IsType<ApiResponse<EmployeeResponseDto>>(nf.Value);
         Assert.False(response.Success);
-        Assert.Equal("Não existe nenhum employee com esse id", response.Message);
+        Assert.Equal("Não existe nenhum funcionário com esse id", response.Message);
     }
 
     [Fact]
@@ -172,7 +171,7 @@ public class EmployeesControllerTests
         var ok = Assert.IsType<OkObjectResult>(action.Result);
         var response = Assert.IsType<ApiResponse<bool>>(ok.Value);
         Assert.True(response.Success);
-        Assert.Equal("Os dados do employee foram atualizados", response.Message);
+        Assert.Equal("Os dados do funcionário foram atualizados", response.Message);
     }
 
     [Fact]
@@ -219,7 +218,7 @@ public class EmployeesControllerTests
         var nf = Assert.IsType<NotFoundObjectResult>(action.Result);
         var response = Assert.IsType<ApiResponse<bool>>(nf.Value);
         Assert.False(response.Success);
-        Assert.Equal("Não existe nenhum employee com esse id", response.Message);
+        Assert.Equal("Não existe nenhum funcionário com esse id", response.Message);
     }
 
     [Fact]
@@ -238,7 +237,7 @@ public class EmployeesControllerTests
         var ok = Assert.IsType<OkObjectResult>(action.Result);
         var response = Assert.IsType<ApiResponse<bool>>(ok.Value);
         Assert.True(response.Success);
-        Assert.Equal("Employee removido", response.Message);
+        Assert.Equal("Funcionário removido", response.Message);
     }
 
     [Fact]
@@ -257,6 +256,6 @@ public class EmployeesControllerTests
         var nf = Assert.IsType<NotFoundObjectResult>(action.Result);
         var response = Assert.IsType<ApiResponse<bool>>(nf.Value);
         Assert.False(response.Success);
-        Assert.Equal("Não existe nenhum employee com esse id", response.Message);
+        Assert.Equal("Não existe nenhum funcionário com esse id", response.Message);
     }
 }

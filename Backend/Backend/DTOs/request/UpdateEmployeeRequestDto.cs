@@ -2,6 +2,9 @@
 
 namespace Backend.DTOs.request;
 
+/// <summary>
+/// Data Transfer Object for updating an existing employee.
+/// </summary>
 public class UpdateEmployeeRequestDto
 {
     /// <summary>
@@ -15,10 +18,10 @@ public class UpdateEmployeeRequestDto
 
     /// <summary>
     /// Delivery Location of the employee.
-    /// Maximum length of 50 characters.
+    /// Maximum length of 30 characters.
     /// </summary>
     [Required(ErrorMessage = "O campo {0} é obrigatório.")]
     [StringLength(30, ErrorMessage = "O campo {0} deve ter no máximo {1} caracteres.")]
     public string DeliveryLocation { get; set; } = string.Empty;
-    
+
 }

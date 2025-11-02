@@ -2,6 +2,9 @@
 
 namespace Backend.DTOs.request;
 
+/// <summary>
+/// Data Transfer Object for creating a new employee.
+/// </summary>
 public class CreateEmployeeRequestDto
 {
      /// <summary>

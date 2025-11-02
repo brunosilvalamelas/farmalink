@@ -11,14 +11,14 @@ public interface IEmployeeService
     /// <summary>
     /// Creates a new employee in the database.
     /// </summary>
-    /// <param name="employeeDto">The data to create a new employee.</param>
+    /// <param name="createEmployeeDto">The data to create a new employee.</param>
     /// <returns>A ServiceResult containing the created employee or validation errors.</returns>
-    Task<(Employee employee, string token)> CreateEmployeeAsync(CreateEmployeeRequestDto createEmployeeDto);
+    Task<Employee> CreateEmployeeAsync(CreateEmployeeRequestDto createEmployeeDto);
 
     /// <summary>
     /// Retrieves all employees from the database.
     /// </summary>
-    /// <returns>A ServiceResult containing the list of employee.</returns>
+    /// <returns>A ServiceResult containing the list of employees.</returns>
     Task<List<Employee>> GetAllEmployeesAsync();
 
     /// <summary>

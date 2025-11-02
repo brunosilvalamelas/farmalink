@@ -1,5 +1,8 @@
 ﻿namespace Backend.DTOs.response;
 
+/// <summary>
+/// Data Transfer Object for employee response data.
+/// </summary>
 public class EmployeeResponseDto
 {
     /// <summary>

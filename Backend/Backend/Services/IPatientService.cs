@@ -9,7 +9,7 @@ namespace Backend.Services;
 public interface IPatientService
 {
 
-    Task<Patient> CreatePatientAsync(int loggedInTutorId, CreatePatientRequestDto createPatientDto);
+    Task<Patient?> CreatePatientAsync(int loggedInTutorId, CreatePatientRequestDto createPatientDto);
     /// <summary>
     /// Retrieves all patients from the database.
     /// </summary>

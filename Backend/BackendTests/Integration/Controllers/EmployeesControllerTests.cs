@@ -105,7 +105,7 @@ public class EmployeesControllerTests : IDisposable
         var nf = Assert.IsType<NotFoundObjectResult>(result.Result);
         var response = Assert.IsType<ApiResponse<EmployeeResponseDto>>(nf.Value);
         Assert.False(response.Success);
-        Assert.Equal("Não existe nenhum employee com esse id", response.Message);
+        Assert.Equal("Não existe nenhum funcionário com esse id", response.Message);
     }
 
     // POST /api/employees (created)
@@ -124,11 +124,10 @@ public class EmployeesControllerTests : IDisposable
         var result = await _controller.CreateEmployee(dto);
 
         var created = Assert.IsType<CreatedAtActionResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<CreateEmployeeResponseDto>>(created.Value);
+        var response = Assert.IsType<ApiResponse<EmployeeResponseDto>>(created.Value);
         Assert.True(response.Success);
         Assert.NotNull(response.Data);
         Assert.Equal(dto.Name, response.Data!.Name);
-        Assert.Equal(UserRole.Employee, response.Data!.Role);
     }
 
     // POST /api/employees (bad request – model state inválido)
@@ -137,7 +136,7 @@ public class EmployeesControllerTests : IDisposable
     {
         var dto = new CreateEmployeeRequestDto
         {
-            Name = "",                      
+            Name = "",
             Email = "carla@example.com",
             PhoneNumber = "913222333",
             Password = "Password#123",
@@ -149,7 +148,7 @@ public class EmployeesControllerTests : IDisposable
         var result = await _controller.CreateEmployee(dto);
 
         var bad = Assert.IsType<BadRequestObjectResult>(result.Result);
-        var response = Assert.IsType<ApiResponse<CreateEmployeeResponseDto>>(bad.Value);
+        var response = Assert.IsType<ApiResponse<EmployeeResponseDto>>(bad.Value);
         Assert.False(response.Success);
         Assert.Equal("Erros de validação", response.Message);
     }
@@ -169,7 +168,7 @@ public class EmployeesControllerTests : IDisposable
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var response = Assert.IsType<ApiResponse<bool>>(ok.Value);
         Assert.True(response.Success);
-        Assert.Equal("Os dados do employee foram atualizados", response.Message);
+        Assert.Equal("Os dados do funcionário foram atualizados", response.Message);
     }
 
     // PUT /api/employees/{id} (bad request)
@@ -207,7 +206,7 @@ public class EmployeesControllerTests : IDisposable
         var nf = Assert.IsType<NotFoundObjectResult>(result.Result);
         var response = Assert.IsType<ApiResponse<bool>>(nf.Value);
         Assert.False(response.Success);
-        Assert.Equal("Não existe nenhum employee com esse id", response.Message);
+        Assert.Equal("Não existe nenhum funcionário com esse id", response.Message);
     }
 
     // DELETE /api/employees/{id} (ok)
@@ -219,7 +218,7 @@ public class EmployeesControllerTests : IDisposable
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var response = Assert.IsType<ApiResponse<bool>>(ok.Value);
         Assert.True(response.Success);
-        Assert.Equal("Employee removido", response.Message);
+        Assert.Equal("Funcionário removido", response.Message);
     }
 
     // DELETE /api/employees/{id} (not found)
@@ -231,6 +230,6 @@ public class EmployeesControllerTests : IDisposable
         var nf = Assert.IsType<NotFoundObjectResult>(result.Result);
         var response = Assert.IsType<ApiResponse<bool>>(nf.Value);
         Assert.False(response.Success);
-        Assert.Equal("Não existe nenhum employee com esse id", response.Message);
+        Assert.Equal("Não existe nenhum funcionário com esse id", response.Message);
     }
 }
