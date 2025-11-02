@@ -50,7 +50,7 @@ jobs:
           dotnet test BackendTests.csproj \
             --filter "FullyQualifiedName~BackendTests.Integration" \
             /p:CollectCoverage=true \
-            /p:CoverletOutput=coverage/unit.xml \
+            /p:CoverletOutput=coverage/integration.xml \
             /p:CoverletOutputFormat=opencover
 
       # 8. Install ReportGenerator
