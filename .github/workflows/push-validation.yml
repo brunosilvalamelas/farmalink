@@ -1,4 +1,4 @@
-name: feature-branch-unit-tests
+name: Push Validation
 
 on:
   push:
