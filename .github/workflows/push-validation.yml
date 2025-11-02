@@ -28,8 +28,40 @@ jobs:
       - name: Build
         run: dotnet build "Backend/Backend.sln"
 
-      # 5. Run unit tests only
-      - name: Run unit tests
+      # 5. Ensure coverage folder exists
+      - name: Ensure coverage folder exists
+        run: mkdir -p Backend/BackendTests/coverage
+
+      # 6. Run unit tests with coverage
+      - name: Run unit tests with coverage
         working-directory: Backend/BackendTests
         run: |
-          dotnet test BackendTests.csproj --filter "FullyQualifiedName~BackendTests.Unit"
+          dotnet test BackendTests.csproj \
+            --filter "FullyQualifiedName~BackendTests.Unit" \
+            /p:CollectCoverage=true \
+            /p:CoverletOutput=coverage/unit.xml \
+            /p:CoverletOutputFormat=opencover
+
+      # 7. Install ReportGenerator
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      # 8. Add .NET tools to PATH
+      - name: Add .NET tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+      # 9. Generate separate HTML reports
+      - name: Generate unit test coverage report
+        working-directory: Backend/BackendTests
+        run: |
+          reportgenerator \
+            -reports:coverage/unit.xml \
+            -targetdir:coverage-report/unit \
+            -reporttypes:Html
+
+      # 10. Upload all coverage reports
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            Backend/BackendTests/coverage-report/unit
