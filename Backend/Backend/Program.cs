@@ -21,6 +21,7 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMedicationService, MedicationService>();
+builder.Services.AddScoped<IIntakeInstructionService, IntakeInstructionService>();
 builder.Services.AddControllers();
 
 // Disable automatic ProblemDetails for invalid model state to allow custom handling
