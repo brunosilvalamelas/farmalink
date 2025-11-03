@@ -1,8 +1,3 @@
-/// <summary>
-/// Entry point for the FarmaLink backend application.
-/// Configures services, authentication, and middleware for the ASP.NET Core web application.
-/// </summary>
-
 using System.Security.Claims;
 using System.Text;
 using Backend.Data;
@@ -13,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +18,7 @@ builder.Services.AddDbContext<DataContext>(options =>
 // Add services to the container.
 builder.Services.AddScoped<ITutorService, TutorService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMedicationService, MedicationService>();
 builder.Services.AddControllers();
@@ -29,6 +26,17 @@ builder.Services.AddControllers();
 // Disable automatic ProblemDetails for invalid model state to allow custom handling
 builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
 
+// --- Swagger ---
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Backend API",
+        Version = "v1",
+        Description = "WEB API FARMA LINK"
+    });
+});
 
 //Tells how asp net to authenticate incoming requests
 // builder.Services.AddAuthentication(options =>
@@ -90,6 +98,14 @@ builder.Services.AddAuthentication(options =>
     });
 
 var app = builder.Build();
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Backend API v1");
+    c.RoutePrefix = "swagger"; // UI em /swagger
+    c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+    c.DisplayRequestDuration();
+});
 
 app.MapGet("/secret-cookies-only",
         (ClaimsPrincipal user) =>

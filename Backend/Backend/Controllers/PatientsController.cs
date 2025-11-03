@@ -114,7 +114,7 @@ public class PatientsController : BaseApiController
         return Ok(new ApiResponse<List<PatientResponseDto>>
             { Message = "Utentes encontrados.", Data = patientsResponse });
     }
-    
+
     /// <summary>
     /// Retrieves a patient by their ID.
     /// </summary>

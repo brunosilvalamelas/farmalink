@@ -21,6 +21,11 @@ public class DataContext : DbContext
     /// DbSet for managing Patient entities in the database.
     /// </summary>
     public DbSet<Patient> Patients { get; set; }
+    
+    /// <summary>
+    /// DbSet for managing Employee entities in the database.
+    /// </summary>
+    public DbSet<Employee> Employees { get; set; }
 
     /// <summary>
     /// DbSet for managing Medication entities in the database.
