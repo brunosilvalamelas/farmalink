@@ -8,33 +8,32 @@ namespace Backend.Controllers
     [Route("api/patients/{patientId}/[controller]")]
     public class PatientMedicationsController : ControllerBase
     {
-        private readonly MedicationService _service;
+        
+        private readonly IMedicationPrescriptionService _prescriptionService;
 
-        public PatientMedicationsController(MedicationService service)
+        
+        public PatientMedicationsController(IMedicationPrescriptionService prescriptionService)
         {
-            _service = service;
+            _prescriptionService = prescriptionService;
         }
 
-        // ✅ GET: api/patients/1/medications?prescribed=true
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Medication>>> GetAllForPatient(int patientId, [FromQuery] bool? prescribed)
         {
-            var meds = await _service.GetByPatientIdAsync(patientId, prescribed);
+            var meds = await _prescriptionService.GetByPatientIdAsync(patientId, prescribed);
             return Ok(meds);
         }
 
-        // ✅ GET: api/patients/1/medications/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Medication>> GetById(int patientId, int id)
         {
-            var med = await _service.GetByIdAsync(id);
+            var med = await _prescriptionService.GetByIdAsync(id);
             if (med == null || med.PatientId != patientId)
                 return NotFound(new { message = "Medicamento não encontrado para este paciente." });
 
             return Ok(med);
         }
 
-        // ✅ POST: api/patients/1/medications
         [HttpPost]
         public async Task<ActionResult<Medication>> AddToPatient(int patientId, [FromBody] Medication medication)
         {
@@ -42,11 +41,10 @@ namespace Backend.Controllers
                 return BadRequest(new { message = "Dados inválidos." });
 
             medication.PatientId = patientId;
-            var created = await _service.AddAsync(medication);
+            var created = await _prescriptionService.AddAsync(medication);
             return CreatedAtAction(nameof(GetById), new { patientId = patientId, id = created.MedicationId }, created);
         }
 
-        // ✅ PUT: api/patients/1/medications/5
         [HttpPut("{id}")]
         public async Task<ActionResult<Medication>> UpdateForPatient(int patientId, int id, [FromBody] Medication medication)
         {
@@ -56,22 +54,21 @@ namespace Backend.Controllers
             if (medication.PatientId != patientId)
                 return BadRequest(new { message = "O paciente associado não corresponde ao medicamento." });
 
-            var updated = await _service.UpdateAsync(id, medication);
+            var updated = await _prescriptionService.UpdateAsync(id, medication);
             if (updated == null)
                 return NotFound(new { message = "Medicamento não encontrado para este paciente." });
 
             return Ok(updated);
         }
 
-        // ✅ DELETE: api/patients/1/medications/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteForPatient(int patientId, int id)
         {
-            var med = await _service.GetByIdAsync(id);
+            var med = await _prescriptionService.GetByIdAsync(id);
             if (med == null || med.PatientId != patientId)
                 return NotFound(new { message = "Medicamento não encontrado para este paciente." });
 
-            var deleted = await _service.DeleteAsync(id);
+            var deleted = await _prescriptionService.DeleteAsync(id);
             if (!deleted)
                 return NotFound();
 

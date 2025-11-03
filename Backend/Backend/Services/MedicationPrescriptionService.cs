@@ -4,11 +4,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services
 {
-    public class MedicationService
+    public class MedicationPrescriptionService : IMedicationPrescriptionService
+
     {
         private readonly DataContext _context;
 
-        public MedicationService(DataContext context)
+        public MedicationPrescriptionService(DataContext context)
         {
             _context = context;
         }
@@ -68,7 +69,7 @@ namespace Backend.Services
             return medication;
         }
 
-        // ✅ Adicionar medicamento diretamente a um paciente
+        
         public async Task<Medication> AddToPatientAsync(int patientId, Medication medication)
         {
             medication.PatientId = patientId;
@@ -77,7 +78,7 @@ namespace Backend.Services
             return medication;
         }
 
-        // ✅ Remover medicamento
+        
         public async Task<bool> DeleteAsync(int id)
         {
             var medication = await _context.Medications.FindAsync(id);

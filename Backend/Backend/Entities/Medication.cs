@@ -49,6 +49,9 @@ namespace Backend.Entities
         [Required(ErrorMessage = "O campo {0} é obrigatório.")]
         [Column(TypeName = "decimal(5,2)")]
         public decimal LowStockThreshold { get; set; }
+        
+        [Required]
+        public bool RequiresPrescription { get; set; }
 
         /// <summary>
         /// Navigation property to the patient.
