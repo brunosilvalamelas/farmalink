@@ -19,6 +19,11 @@ public class UserService : IUserService
     private readonly IConfiguration _configuration;
     private readonly DataContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of the UserService.
+    /// </summary>
+    /// <param name="configuration">The configuration instance for accessing settings like JWT keys.</param>
+    /// <param name="context">The database context for data operations.</param>
     public UserService(IConfiguration configuration, DataContext context)
     {
         _configuration = configuration;
@@ -31,7 +36,7 @@ public class UserService : IUserService
     /// <param name="email">The user's email address.</param>
     /// <param name="password">The user's plain text password.</param>
     /// <returns>A LoginResponseDto with token and user info, or null if authentication fails.</returns>
-    public async Task<LoginResponseDto?> AuthenticateUserAsync(string email, string password)
+    public async Task<AuthResponseDto?> AuthenticateUserAsync(string email, string password)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user == null)
@@ -47,13 +52,13 @@ public class UserService : IUserService
 
         var token = GenerateToken(user.Id, user.Role);
 
-
-        return new LoginResponseDto
+        var authResponse = new AuthResponseDto(new LoginResponseDto
         {
-            Token = token,
             Name = user.Name,
             Role = user.Role
-        };
+        }, token);
+        
+        return authResponse;
     }
 
     /// <summary>

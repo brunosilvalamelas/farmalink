@@ -58,6 +58,12 @@ public class PatientsController : BaseApiController
         {
             var createdPatient = await _patientService.CreatePatientAsync(loggedInTutorId, createPatientDto);
 
+            if (createdPatient == null)
+            {
+                return NotFound(new ApiResponse<PatientResponseDto>
+                    { Success = false, Message = "Tutor não encontrado" });
+            }
+
             var patientResponse = new PatientResponseDto
             {
                 Id = createdPatient.Id,

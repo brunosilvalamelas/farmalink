@@ -49,9 +49,18 @@ public class TutorsController : BaseApiController
         {
             var (createdTutor, token) = await _tutorService.CreateTutorAsync(createTutorDto);
 
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTimeOffset.UtcNow.AddMinutes(120)
+            };
+
+            Response.Cookies.Append("access_token", token, cookieOptions);
+
             var response = new CreateTutorResponseDto
             {
-                Token = token,
                 Name = createdTutor.Name,
                 Role = UserRole.Tutor
             };

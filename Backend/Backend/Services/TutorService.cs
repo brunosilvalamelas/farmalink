@@ -18,6 +18,7 @@ public class TutorService : ITutorService
     /// Initializes a new instance of the TutorService.
     /// </summary>
     /// <param name="dataContext">The data context instance for database interactions.</param>
+    /// <param name="userService">The user service instance for token generation and validation.</param>
     public TutorService(DataContext dataContext, IUserService userService)
     {
         _context = dataContext;
@@ -63,7 +64,7 @@ public class TutorService : ITutorService
     /// <summary>
     /// Retrieves all tutors from the database.
     /// </summary>
-    /// <returns>A ServiceResult containing the list of tutors.</returns>
+    /// <returns>The list of tutors.</returns>
     public async Task<List<Tutor>> GetAllTutorsAsync()
     {
         var tutors = await _context.Tutors.ToListAsync();
@@ -74,7 +75,7 @@ public class TutorService : ITutorService
     /// Retrieves a tutor by their ID.
     /// </summary>
     /// <param name="id">The ID of the tutor to retrieve.</param>
-    /// <returns>A ServiceResult containing the tutor or a not found result.</returns>
+    /// <returns>The tutor if found, or null otherwise.</returns>
     public async Task<Tutor?> GetTutorByIdAsync(int id)
     {
         var tutor = await _context.Tutors.FindAsync(id);
@@ -87,7 +88,7 @@ public class TutorService : ITutorService
     /// </summary>
     /// <param name="id">The ID of the tutor to update.</param>
     /// <param name="updateTutorDto">The updated tutor data.</param>
-    /// <returns>A ServiceResult indicating the success of the update operation.</returns>
+    /// <returns>True if the update was successful, false otherwise.</returns>
     public async Task<bool> UpdateTutorAsync(int id, UpdateTutorRequestDto updateTutorDto)
     {
         var tutor = await _context.Tutors.FindAsync(id);
@@ -109,7 +110,7 @@ public class TutorService : ITutorService
     /// Deletes a tutor by their ID.
     /// </summary>
     /// <param name="id">The ID of the tutor to delete.</param>
-    /// <returns>A ServiceResult indicating the success of the delete operation.</returns>
+    /// <returns>True if the deletion was successful, false otherwise.</returns>
     public async Task<bool> DeleteTutorAsync(int id)
     {
         var tutor = await _context.Tutors.FindAsync(id);
