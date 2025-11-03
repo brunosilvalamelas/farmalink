@@ -1,0 +1,98 @@
+name: Merge Validation
+
+on:
+  pull_request:
+    branches:
+      - master
+      - dev
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout code
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Setup .NET SDK
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.x"
+
+      # 3. Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore "Backend/Backend.sln"
+
+      # 4. Build the solution
+      - name: Build solution
+        run: dotnet build "Backend/Backend.sln"
+
+      # 5. Ensure coverage folder exists
+      - name: Ensure coverage folder exists
+        run: mkdir -p Backend/BackendTests/coverage
+
+      # 6. Run unit tests with coverage
+      - name: Run unit tests with coverage
+        working-directory: Backend/BackendTests
+        run: |
+          dotnet test BackendTests.csproj \
+            --filter "FullyQualifiedName~BackendTests.Unit" \
+            /p:CollectCoverage=true \
+            /p:CoverletOutput=coverage/unit.xml \
+            /p:CoverletOutputFormat=opencover
+
+      # 7. Run integration tests with coverage
+      - name: Run integration tests with coverage
+        working-directory: Backend/BackendTests
+        run: |
+          dotnet test BackendTests.csproj \
+            --filter "FullyQualifiedName~BackendTests.Integration" \
+            /p:CollectCoverage=true \
+            /p:CoverletOutput=coverage/integration.xml \
+            /p:CoverletOutputFormat=opencover
+
+      # 8. Install ReportGenerator
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      # 9. Add .NET tools to PATH
+      - name: Add .NET tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      # 10. Generate separate HTML reports
+      - name: Generate unit test coverage report
+        working-directory: Backend/BackendTests
+        run: |
+          reportgenerator \
+            -reports:coverage/unit.xml \
+            -targetdir:coverage-report/unit \
+            -reporttypes:Html
+
+      - name: Generate integration test coverage report
+        working-directory: Backend/BackendTests
+        run: |
+          reportgenerator \
+            -reports:coverage/integration.xml \
+            -targetdir:coverage-report/integration \
+            -reporttypes:Html
+
+      # 11. Generate merged coverage report
+      - name: Generate merged coverage report
+        working-directory: Backend/BackendTests
+        run: |
+          reportgenerator \
+            -reports:"coverage/unit.xml;coverage/integration.xml" \
+            -targetdir:coverage-report/merged \
+            -reporttypes:Html
+
+      # 12. Upload all coverage reports
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            Backend/BackendTests/coverage-report/unit
+            Backend/BackendTests/coverage-report/integration
+            Backend/BackendTests/coverage-report/merged
