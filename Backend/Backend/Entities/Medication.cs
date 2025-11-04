@@ -27,7 +27,7 @@ namespace Backend.Entities
         /// Maximum length 50 characters.
         /// </summary>
         [Required(ErrorMessage = "O campo {0} é obrigatório.")]
-        [StringLength(50, MinimumLength = 1, ErrorMessage = "O campo {0} deve ter pelo menos {2} caracteres e no máximo {1} caracteres.")]
+        [StringLength(50, ErrorMessage = "O campo {0} deve ter no máximo {1} caracteres.")]
         public string Name { get; set; } = null!;
 
         /// <summary>
