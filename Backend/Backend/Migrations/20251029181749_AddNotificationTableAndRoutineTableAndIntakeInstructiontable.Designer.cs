@@ -3,6 +3,7 @@ using System;
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251029181749_AddNotificationTableAndRoutineTableAndIntakeInstructiontable")]
+    partial class AddNotificationTableAndRoutineTableAndIntakeInstructiontable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -203,11 +206,6 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Entities.Employee", b =>
                 {
                     b.HasBaseType("Backend.Entities.User");
-
-                    b.Property<string>("DeliveryLocation")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
 
                     b.ToTable("Employees", (string)null);
                 });
